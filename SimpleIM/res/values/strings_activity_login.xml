@@ -1,0 +1,26 @@
+<resources>
+
+    <string name="title_activity_login">Entra</string>
+
+    <!-- Strings related to login -->
+    <string name="it_et_username">Username</string>
+    <string name="it_et_password">Password</string>
+    <string name="it_error_field_required">Questo campo è obbligatorio</string>    
+    <string name="it_login_progress_signing_in">Login in corso...</string>
+    <string name="it_error_no_service">Servizio non è in esecuzione</string>
+    <string name="it_error_no_network">Non si è connessi ad internet</string>
+    
+    <string name="it_error_check_username_or_password">Login non riuscito.\nControllare il login e la password.</string>
+    
+    
+    
+    <string name="it_error_invalid_password">La password è troppo corta</string>    
+    
+    <string name="action_sign_in_register"><b>Sign in</b> or register</string>
+    <string name="menu_forgot_password">Recover lost password</string>    
+    
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    
+
+</resources>

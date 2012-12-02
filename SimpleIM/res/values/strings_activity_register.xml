@@ -1,0 +1,5 @@
+<resources>
+    <string name="title_activity_register">Registrati</string>
+    <string name="register_progress">registrazione in corso????</string>
+    <string name="it_et_password_confirm">Conferma Password</string>
+</resources>
