@@ -1,0 +1,35 @@
+title Login
+
+ClientCommunication->+Server:startTcpConnection
+ClientCommunication->Server:  LoginMessage(username, pwd, myip, portListeningMessages)
+
+Server-->ClientCommunication: LoginMessageAnswer
+
+
+alt LoginMessageAnswer == Rejected || wait timeout is reached
+
+ClientCommunication->Server: closeTcpConnection
+Server-->-ClientCommunication: closed
+
+ClientCommunication->ClientCommunication: showErrorOnInterface()
+
+else LoginMessageAnswer == OK
+
+ClientCommunication->+Server: recieveListUserMesage
+Server-->ClientCommunication: ListUserMessage
+
+ClientCommunication->Server: closeTcpConnection
+Server-->-ClientCommunication: closed
+
+alt wait timeout is reached
+ClientCommunication->ClientCommunication: showErrorOnInterface()
+else
+
+ClientCommunication->ClientCommunication: startUDPSocket(myip, portListeningMessages)
+
+
+ClientCommunication->ClientCommunication: showUsersOnInterface(ListUserMessage)
+
+
+end
+

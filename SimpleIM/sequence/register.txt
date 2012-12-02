@@ -1,0 +1,22 @@
+title Register
+
+ClientCommunication->+Server:startTcpConnection
+ClientCommunication->Server:  RegisterMessage(username, pwd, myip, portListeningMessages)
+
+Server-->ClientCommunication: RegisterMessageAnswer
+
+ClientCommunication->Server: closeTcpConnection
+
+Server-->-ClientCommunication: closed
+
+
+
+alt RegisterMessageAnswer == Rejected || wait timeout is reached
+
+ClientCommunication->ClientCommunication: showErrorOnInterface()
+
+else RegisterMessageAnswer == OK
+
+ClientCommunication->ClientCommunication: showOkWindow()
+
+end
