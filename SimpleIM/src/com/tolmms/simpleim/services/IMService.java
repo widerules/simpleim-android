@@ -1,7 +1,6 @@
 package com.tolmms.simpleim.services;
 
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Vector;
 
 import android.app.NotificationManager;
@@ -12,7 +11,6 @@ import android.net.NetworkInfo;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Pair;
 
 import com.tolmms.simpleim.communication.Communication;
 import com.tolmms.simpleim.communication.CommunicationException;

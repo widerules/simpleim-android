@@ -1,10 +1,8 @@
 package com.tolmms.simpleim.interfaces;
 
 import java.net.UnknownHostException;
-import java.util.Vector;
 
 import com.tolmms.simpleim.communication.CommunicationException;
-import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 
