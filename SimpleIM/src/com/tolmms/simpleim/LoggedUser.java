@@ -16,7 +16,9 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -73,12 +75,18 @@ public class LoggedUser extends Activity {
 	@Override
 	protected void onPause() {
 		unbindService(serviceConnection);
+		
+		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
+		
 		super.onPause();
 	}
 	
 	@Override
 	protected void onResume() {
 		bindService(new Intent(LoggedUser.this, IMService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+		
+		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
+		
 		super.onResume();
 	}
 	
@@ -115,7 +123,7 @@ public class LoggedUser extends Activity {
 				holder = new ViewHolder();
 				holder.iv_status_user = (ImageView) convertView.findViewById(R.id.iv_user_status);
 				holder.tv_friend_username = (TextView) convertView.findViewById(R.id.tv_friend_username);
-
+				holder.iv_chat_icon = (ImageView) convertView.findViewById(R.id.iv_chat_icon);
 				convertView.setTag(holder);
 			} else {
 				holder = (ViewHolder) convertView.getTag();
@@ -124,8 +132,10 @@ public class LoggedUser extends Activity {
 			UserInfo currentUser = user_list.get(position);
 			if (currentUser.isOnline()) {
 				holder.iv_status_user.setImageResource(R.drawable.ic_status_online);
+				holder.iv_chat_icon.setImageResource(R.drawable.ic_chat);
 			} else {
 				holder.iv_status_user.setImageResource(R.drawable.ic_status_offline);
+				holder.iv_chat_icon.setImageResource(R.drawable.ic_chat_no);
 			}
 			
 			holder.tv_friend_username.setText(currentUser.getUsername());
@@ -137,7 +147,9 @@ public class LoggedUser extends Activity {
 	private static class ViewHolder {
 		ImageView iv_status_user;
 		TextView tv_friend_username;
+		ImageView iv_chat_icon;
 	}
+	
 	EfficientAdapter myadapt;
 	
 	@Override
@@ -153,8 +165,26 @@ public class LoggedUser extends Activity {
 		l1.setAdapter(myadapt);
 		
 		
-		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_LIST_RECIEVED));
 		
+		
+		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
+		
+		
+		
+		l1.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+					long arg3) {
+				
+				
+				String selectedUser = TemporaryStorage.user_list.get(arg2).getUsername();
+				
+				Intent a = new Intent(LoggedUser.this, ChatActivity.class);
+				a.putExtra(ChatActivity.USERNAME_TO_CHAT_WITH_EXTRA, selectedUser);
+				startActivity(a);
+			}
+		});
 	}
 	
 	
@@ -163,11 +193,19 @@ public class LoggedUser extends Activity {
 	    public void onReceive(Context context, Intent intent) {
 	        String action = intent.getAction();
 	        
-	        Toast.makeText(LoggedUser.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
+	        if (MainActivity.DEBUG)
+	        	Toast.makeText(LoggedUser.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
+	        
+	        if (!action.equals(IAppManager.INTENT_ACTION_USER_STATE_CHANGED))
+	        	return;
+	        
 	        
 	        myadapt.notifyDataSetChanged();
 	    }
 	};
+	
+	
+	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -175,5 +213,7 @@ public class LoggedUser extends Activity {
 		getMenuInflater().inflate(R.menu.activity_logged_user, menu);
 		return true;
 	}
+	
+	
 
 }

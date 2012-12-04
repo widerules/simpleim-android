@@ -7,6 +7,7 @@
     <uses-sdk
         android:minSdkVersion="14"
         android:targetSdkVersion="16" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -29,11 +30,10 @@
             android:label="@string/title_activity_login"
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
-        
-        
-        <service android:name="com.tolmms.simpleim.services.IMService"></service>        
 
-        
+        <service android:name="com.tolmms.simpleim.services.IMService" >
+        </service>
+
         <activity
             android:name="com.tolmms.simpleim.RegisterActivity"
             android:label="@string/title_activity_register" >
@@ -41,6 +41,10 @@
         <activity
             android:name="com.tolmms.simpleim.LoggedUser"
             android:label="@string/title_activity_logged_user" >
+        </activity>
+        <activity
+            android:name="com.tolmms.simpleim.ChatActivity"
+            android:label="@string/title_activity_chat" >
         </activity>
     </application>
 

@@ -54,7 +54,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		super.onDestroy();
 	}
 	
-	Intent gotUserListIntent = new Intent(INTENT_ACTION_USER_LIST_RECIEVED);
+	
 	
 	@Override
 	public void onCreate() {
@@ -81,12 +81,10 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			
 			TemporaryStorage.reorderUserList();
 			
-			LocalBroadcastManager.getInstance(this).sendBroadcast(gotUserListIntent);
+			LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
 			
-			user_list.elementAt(4).setOnline();
-TemporaryStorage.reorderUserList();
 			
-			LocalBroadcastManager.getInstance(this).sendBroadcast(gotUserListIntent);
+			LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
 //			TemporaryStorage.user_list = user_list;
 		}
 		
@@ -153,20 +151,54 @@ TemporaryStorage.reorderUserList();
 		//notification of recieved message
 		
 	}
+	
+	
+	Intent userStateChange = new Intent(INTENT_ACTION_USER_STATE_CHANGED);
 
 	@Override
 	public void userLoggedOut(UserInfo source) {
-		// TODO ancora da fare
+		int index = TemporaryStorage.user_list.indexOf(source);		
 		
-		// maybe a notification user loggod out
+		if (index == -1)
+			return;
+		// non c'è l'utente che fa il logout;
 		
+		TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source)).setOffline();
+		
+		
+		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_USERNAME_EXTRA, source.getUsername());
+		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA, UserInfo.OFFLINE_STATUS);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
+		
+		//send messages
 	}
 
 	@Override
 	public void userLoggedIn(UserInfo source) {
-		// TODO ancora da fare
+		int index = TemporaryStorage.user_list.indexOf(source);		
+		
+		if (index == -1) {
+			//TODO può essere il caso che l'utente si è da poco registrato
+			TemporaryStorage.user_list.add(source);
+		} else {
+			TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source)).setOnline();
+		}
+		
+		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_USERNAME_EXTRA, source.getUsername());
+		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA, UserInfo.ONLINE_STATUS);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
 		
 		// maybe a notification user logged in
+	}
+
+	Intent messageReceivedSent = new Intent(INTENT_ACTION_MESSAGES_RECEIVED_SENT);
+	@Override
+	public void sendMessage(String username_to_chat, String the_message) {
+		// TODO Auto-generated method stub
+		
+		messageReceivedSent.putExtra(INTENT_ACTION_MESSAGES_RECEIVED_SENT_USERNAME_EXTRA, "aarova1");
+		LocalBroadcastManager.getInstance(this).sendBroadcast(messageReceivedSent);
+		
 	}
 	
 	
