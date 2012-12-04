@@ -91,10 +91,29 @@ public class TcpServer extends BaseServer {
             
             
             
-            String message_type = Procedures.getMessageType(request);
+            
+            String message_type = null;
+            try {
+            message_type = Procedures.getMessageType(request);
+            } catch (XmlMessageReprException e) {
+					if (DEBUG) 
+                		System.out.println("Cannot get the message type :( " + e.getMessage());
+            	
+            	try {
+					in.close();
+					out.close();
+	                incoming.close();
+				} catch (IOException e2) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                
+                continue;
+            }
             
             if (message_type == null) {
-            	
+            	if (DEBUG) 
+            		System.out.println("message type is null");
             	try {
 					in.close();
 					out.close();
@@ -152,7 +171,7 @@ public class TcpServer extends BaseServer {
 						//TODO cannot be here
 					}
             		
-            		out.write(answer);
+            		out.println(answer);
             	} else {
             		if (DEBUG) 
                 		System.out.println("Sending ACCEPT login to \"" + userOfMessage.getUsername() +"\"");
@@ -163,7 +182,7 @@ public class TcpServer extends BaseServer {
 						//TODO cannot be here
 					}
             		
-            		out.write(answer);
+            		out.println(answer);
             		
             		
             		ListMessage listMessage = new ListMessage();
@@ -173,7 +192,7 @@ public class TcpServer extends BaseServer {
 						answer = listMessage.toXML();
 					} catch (ParserConfigurationException | TransformerException e) { }
             		
-            		out.write(answer);
+            		out.println(answer);
             	}
             	//must close connections
             } else if (Procedures.isRegisterMessage(message_type)) {

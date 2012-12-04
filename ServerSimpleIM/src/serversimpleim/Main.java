@@ -1,7 +1,5 @@
 package serversimpleim;
 
-import com.tolmms.simpleim.datatypes.CommunicationMessage;
-import com.tolmms.simpleim.datatypes.UserInfo;
 
 public class Main {
 
