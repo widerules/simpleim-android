@@ -1,8 +1,10 @@
 package com.tolmms.simpleim.interfaces;
 
 import java.net.UnknownHostException;
+import java.util.Vector;
 
 import com.tolmms.simpleim.communication.CommunicationException;
+import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 
@@ -14,7 +16,9 @@ public interface IAppManager {
 	
 	public boolean isUserLoggedIn();
 	public boolean isNetworkConnected();
-		
+	
+	
+	public static String INTENT_ACTION_USER_LIST_RECIEVED = "com.tolmms.simpleim.USER_LIST_RECIEVED";
 	
 	//public int addNewFriendRequest(String username);
 	

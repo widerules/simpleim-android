@@ -30,7 +30,7 @@ public class LoginMessageAnswer {
 	}
 	
 	public boolean accepted() {
-		return number.isEmpty();
+		return !number.equals(INVALID_NUMBER);
 	}
 	
 	public static LoginMessageAnswer fromXML(String xml) throws XmlMessageReprException {		
@@ -85,6 +85,10 @@ public class LoginMessageAnswer {
 		doc.appendChild(rootElement);
 		
 		return Procedures.getXmlString(doc);
+	}
+
+	public String getNumber() {
+		return number;
 	}
 
 }

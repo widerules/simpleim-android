@@ -18,6 +18,9 @@ import java.util.Stack;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import android.util.Log;
+
+import com.tolmms.simpleim.MainActivity;
 import com.tolmms.simpleim.datatypes.CommunicationMessage;
 import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
@@ -105,7 +108,13 @@ public class Communication implements ICommunication {
 		
 		try {
 			answer = reader.readLine();
+			
+			if (answer == null)
+				throw new IOException();
+	
 			if (!LoginMessageAnswer.fromXML(answer).accepted()) {
+				if (MainActivity.DEBUG)
+					Log.d("Login - got the first answer", "REFUSED");
 				tryClose(reader, writer, s);
 				throw new UsernameOrPasswordException();
 			}
@@ -117,11 +126,20 @@ public class Communication implements ICommunication {
 			throw new CommunicationException("reciving the answer of login IOException - "+answer);
 		}
 		
-		answer = "";
+		answer = null;
 		
 		try {
 			answer = reader.readLine();
+			
+			if (answer == null)
+				throw new IOException();
+			
 			listMessage = ListMessage.fromXML(answer);
+			if (MainActivity.DEBUG) {
+				Log.d("Login - got the second answer", "got the users list");
+				Log.d("Login - got the second answer", answer);
+			}
+			
 		} catch (XmlMessageReprException e) {
 			tryClose(reader, writer, s);
 			throw new CommunicationException("reciving the second answer of login XmlMessageReprException");
@@ -143,7 +161,7 @@ public class Communication implements ICommunication {
 		
 		
 //		announceIAmOnline(listMessage.getUserList());
-		startListeningForMessages();
+//		startListeningForMessages();
 		
 		return true;
 	}
@@ -217,7 +235,11 @@ public class Communication implements ICommunication {
 				
 				
 				String message_type = null;
-				message_type = Procedures.getMessageType(the_msg);
+				try {
+					message_type = Procedures.getMessageType(the_msg);
+				} catch (XmlMessageReprException e1) {
+					continue;
+				}
 				
 				if (Procedures.isCommunicationMessage(message_type)) {
 					CommunicationMessage cm = null;
