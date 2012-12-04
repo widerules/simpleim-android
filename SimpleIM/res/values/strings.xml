@@ -5,7 +5,6 @@
     <string name="it_program_description">Questo è un semplice programma di messagistica instantanea.\n\nProgetto di MMS - UNIGE DIBRIS (2012).\n\nSupporta aggiunta di amici e chat con amici</string>
     <string name="it_btn_login">Entra</string>
     <string name="it_btn_register">Registrati</string>
-    <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_logged_user">LoggedUser</string>
     

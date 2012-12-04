@@ -11,6 +11,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 
 import com.tolmms.simpleim.communication.Communication;
@@ -21,6 +22,7 @@ import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.interfaces.IAppManagerForComm;
 import com.tolmms.simpleim.interfaces.ICommunication;
+import com.tolmms.simpleim.storage.TemporaryStorage;
 
 public class IMService extends Service implements IAppManager, IAppManagerForComm {
 	private final IBinder iMBinder = new IMBinder();
@@ -31,9 +33,6 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	
 	
 	private ICommunication communication = null;
-	
-	private Vector<UserInfo> userList = null;
-	private HashMap<UserInfo, Vector<Pair<UserInfo, String>>> messages = null;
 
 	private ConnectivityManager conManager;
 	
@@ -57,15 +56,41 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		super.onDestroy();
 	}
 	
+	Intent gotUserListIntent = new Intent(INTENT_ACTION_USER_LIST_RECIEVED);
 	
 	@Override
 	public void onCreate() {
 		notifManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		conManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 		
-		messages = new HashMap<UserInfo, Vector<Pair<UserInfo,String>>>();
-		
 		communication = new Communication(this);
+		
+		TemporaryStorage.user_list.clear();
+		TemporaryStorage.messages.clear();
+		
+		if (true) {
+			Vector<UserInfo> user_list = TemporaryStorage.user_list;
+//			Vector<UserInfo> user_list = new Vector<UserInfo>();
+			
+			
+			user_list.add(new UserInfo("prova1", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS));
+			user_list.add(new UserInfo("arova1", "10.2.1.1", "2000", UserInfo.ONLINE_STATUS));
+			user_list.add(new UserInfo("prova2", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS));
+			user_list.add(new UserInfo("aarova1", "10.2.1.1", "2000", UserInfo.ONLINE_STATUS));
+			user_list.add(new UserInfo("aaaaarova1", "10.2.1.1", "2000", UserInfo.ONLINE_STATUS));
+			user_list.add(new UserInfo("aaaaaaaaarova1", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS));
+		
+			
+			TemporaryStorage.reorderUserList();
+			
+			LocalBroadcastManager.getInstance(this).sendBroadcast(gotUserListIntent);
+			
+			user_list.elementAt(4).setOnline();
+TemporaryStorage.reorderUserList();
+			
+			LocalBroadcastManager.getInstance(this).sendBroadcast(gotUserListIntent);
+//			TemporaryStorage.user_list = user_list;
+		}
 		
 		
 				
@@ -108,7 +133,9 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	}
 
 	public void setUserList(Vector<UserInfo> userList) {
-		this.userList = userList;
+		for (UserInfo userInfo : userList) {
+			TemporaryStorage.user_list.add(userInfo);
+		}
 		
 	}
 
@@ -116,14 +143,14 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	@Override
 	public void recievedMessage(UserInfo source, String message) {
 		//TODO must show up the message and add to a list?
-		Vector<Pair<UserInfo, String>> messagesSource = messages.get(source);
-		
-		if (messagesSource == null)
-			messagesSource = new Vector<Pair<UserInfo,String>>();
-		
-		messagesSource.add(new Pair<UserInfo, String>(source, message));
-		
-		messages.put(source, messagesSource);
+//		Vector<Pair<UserInfo, String>> messagesSource = messages.get(source);
+//		
+//		if (messagesSource == null)
+//			messagesSource = new Vector<Pair<UserInfo,String>>();
+//		
+//		messagesSource.add(new Pair<UserInfo, String>(source, message));
+//		
+//		messages.put(source, messagesSource);
 		
 		//notification of recieved message
 		
@@ -143,5 +170,6 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		
 		// maybe a notification user logged in
 	}
-
+	
+	
 }

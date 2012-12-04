@@ -75,4 +75,8 @@ public class UserInfo {
 		return username;
 	}
 
+	public String getStatus() {
+		return status;
+	}
+
 }

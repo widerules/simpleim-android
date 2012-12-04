@@ -59,12 +59,12 @@ public class Procedures {
 	}
 
 
-	public static String getMessageType(String the_msg) {
+	public static String getMessageType(String the_msg) throws XmlMessageReprException {
 		DocumentBuilder docBuilder = null;
 		try {
 			docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
-//			throw new XmlMessageReprException(e);
+			throw new XmlMessageReprException(e);
 		}
 		
 		if (docBuilder == null || the_msg == null)
@@ -77,9 +77,9 @@ public class Procedures {
 		try {
 			doc = docBuilder.parse(is);
 		} catch (SAXException e) {
-//			throw new XmlMessageReprException(e);
+			throw new XmlMessageReprException(e);
 		} catch (IOException e) {
-//			throw new XmlMessageReprException(e);
+			throw new XmlMessageReprException(e);
 		}
 		
 		if (doc == null)
