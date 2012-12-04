@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="title_activity_logged_user">Lista utenti</string>
     <string name="it_imageview_description">Descrive lo stato dell\'utente: Online oppure Offline.</string>
+
 </resources>

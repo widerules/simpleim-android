@@ -5,19 +5,31 @@
     android:orientation="horizontal" >
 
     <ImageView
-        android:contentDescription="@string/it_imageview_description"
         android:id="@+id/iv_user_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_weight="0"
+        android:contentDescription="@string/it_imageview_description"
         android:src="@drawable/ic_status_offline" />
+
     <TextView
-	    android:id="@+id/tv_friend_username"
-	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent"
-	    android:gravity="center_vertical"
-	    android:layout_marginLeft="5dp" />
-<!-- 	    android:text="aaaaaaaaaaaaaaaaa" /> -->
+        android:id="@+id/tv_friend_username"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:gravity="center_vertical" 
+        android:layout_weight="1"
+        />
 
-
+    <ImageView
+        android:id="@+id/iv_chat_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
+        android:layout_weight="0"
+        android:contentDescription="@string/it_imageview_description"
+        android:src="@drawable/ic_chat_no" />
 
 </LinearLayout>

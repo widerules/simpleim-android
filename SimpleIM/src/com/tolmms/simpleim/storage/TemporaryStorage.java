@@ -24,6 +24,10 @@ public class TemporaryStorage {
 			}
 		});
 	}
+
+	public static UserInfo getUserInfoByUsername(String username_to_chat) {
+		return user_list.get(user_list.indexOf(new UserInfo(username_to_chat, null, null)));
+	}
 	
 	
 }

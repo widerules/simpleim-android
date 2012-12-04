@@ -1,5 +1,7 @@
 package com.tolmms.simpleim;
 
+import com.tolmms.simpleim.services.IMService;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -17,6 +19,12 @@ public class MainActivity extends Activity {
 		
 		Button btn_login = (Button) findViewById(R.id.btn_login);
 		Button btn_register = (Button) findViewById(R.id.btn_register);
+		
+		
+		
+		//TODO importante... devo mettere questo se no il service viene 
+		// riavviato ogni volta che qualcuno si connette al servizio
+		startService(new Intent(this, IMService.class));
 		
 		
 		
