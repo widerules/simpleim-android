@@ -1,7 +1,5 @@
 package com.tolmms.simpleim;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Vector;
 
 import android.app.Activity;
@@ -12,10 +10,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
