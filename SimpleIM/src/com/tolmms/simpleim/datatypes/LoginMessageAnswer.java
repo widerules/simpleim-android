@@ -17,16 +17,18 @@ import org.xml.sax.SAXException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class LoginMessageAnswer {
+	protected UserInfo u;
 	protected String number;
 	
 	protected String INVALID_NUMBER = "";
 
-	public LoginMessageAnswer() {
-		this("");
+	public LoginMessageAnswer(UserInfo u) {
+		this(u, "");
 	}
 	
-	public LoginMessageAnswer(String number) {
+	public LoginMessageAnswer(UserInfo u, String number) {
 		this.number = number;
+		this.u = u;
 	}
 	
 	public boolean accepted() {
@@ -66,7 +68,12 @@ public class LoginMessageAnswer {
 		if (nodes.getLength() != 1 || (e = (Element) nodes.item(0)) == null)
 			throw new XmlMessageReprException();
 		
-		return new LoginMessageAnswer(e.getTextContent());
+		UserInfo thisUserInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.USERNAME_TAG)), 
+				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.IP_TAG)),
+				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG)),
+				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
+		
+		return new LoginMessageAnswer(thisUserInfo, e.getTextContent());
 		
 	}
 	
@@ -81,6 +88,20 @@ public class LoginMessageAnswer {
 		Element e_number = doc.createElement(MessageXMLTags.LOGIN_USER_NUMBER_TAG);
 		e_number.setTextContent(number);
 		
+		Element e_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
+		e_username.setTextContent(u.username);
+		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
+		e_ip.setTextContent(u.ip);
+		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
+		e_port.setTextContent(u.port);
+		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
+		e_status.setTextContent(u.status);
+		
+		rootElement.appendChild(e_username);
+		rootElement.appendChild(e_ip);
+		rootElement.appendChild(e_port);
+		rootElement.appendChild(e_status);
+		
 		rootElement.appendChild(e_number);
 		doc.appendChild(rootElement);
 		
@@ -89,6 +110,10 @@ public class LoginMessageAnswer {
 
 	public String getNumber() {
 		return number;
+	}
+	
+	public UserInfo getUser() {
+		return u;
 	}
 
 }

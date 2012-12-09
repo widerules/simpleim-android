@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:fontFamily="sans-serif-light"
-            android:text="@string/register_progress"
+            android:text="@string/it_register_progress_message"
             android:textAppearance="?android:attr/textAppearanceMedium" />
     </LinearLayout>
 
@@ -41,18 +41,17 @@
             android:orientation="vertical" >
 
             <EditText
-                android:id="@+id/et_username"
+                android:id="@+id/et_username_register"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/it_et_username"
                 
                 android:maxLines="1"
                 android:singleLine="true" />
-            
             <!-- android:inputType="textEmailAddress" -->
 
             <EditText
-                android:id="@+id/et_password"
+                android:id="@+id/et_password_register"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/it_et_password"
@@ -61,7 +60,7 @@
                 android:singleLine="true" />
             
             <EditText
-                android:id="@+id/et_password_confirm"
+                android:id="@+id/et_password_confirm_register"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/it_et_password_confirm"

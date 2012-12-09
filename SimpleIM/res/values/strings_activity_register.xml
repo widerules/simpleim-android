@@ -1,5 +1,11 @@
 <resources>
-    <string name="title_activity_register">Registrati</string>
-    <string name="register_progress">registrazione in corso????</string>
+    <string name="title_activity_register">Registrazione</string>
+    <string name="it_register_progress_message">Registrazione in corso...</string>
     <string name="it_et_password_confirm">Conferma Password</string>
+    
+    <string name="it_error_passwords_are_not_equal">Le due password devono coincidere.</string>
+    
+    <string name="it_error_username_already_exists">Username già occupato.</string>
+    
+    <string name="it_successfull_registration">La registrazione è andata a buon fine!\nAdesso puoi loggarti!</string>
 </resources>

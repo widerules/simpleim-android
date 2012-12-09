@@ -2,5 +2,9 @@
 <resources>
     <string name="title_activity_logged_user">Lista utenti</string>
     <string name="it_imageview_description">Descrive lo stato dell\'utente: Online oppure Offline.</string>
-
+    
+    <string name="it_chat_all_button">Msg. a tutti</string>
+    <string name="it_view_on_map_button">Vis. sulla mappa</string>
+    <string name="it_cancel">Annulla</string>
+    
 </resources>

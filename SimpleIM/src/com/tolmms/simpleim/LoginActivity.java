@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -104,8 +105,6 @@ public class LoginActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		startService(new Intent(LoginActivity.this, IMService.class));
 				
 		setContentView(R.layout.activity_login);
 		
@@ -221,6 +220,7 @@ public class LoginActivity extends Activity {
 					
 					@Override
 					public void run() {
+						Looper.prepare(); //TODO mi da errore se lo cancello quando cerco di loggarmi la seconda volta (dopo essermi sloggato)
 						try {
 							iMService.loginUser(username, password);
 						} catch (UnknownHostException e) {
@@ -242,8 +242,9 @@ public class LoginActivity extends Activity {
 								
 								@Override
 								public void run() {
-									Intent i = new Intent(LoginActivity.this, LoggedUser.class);												
-									
+									Intent i = new Intent(LoginActivity.this, LoggedUser.class);
+//									guarda sul foglio del issue
+//									i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
 									startActivity(i);
 									LoginActivity.this.finish();
 								}
@@ -256,6 +257,7 @@ public class LoginActivity extends Activity {
 							@Override
 							public void run() {
 								Tools.showMyDialog(errorMsg, LoginActivity.this);
+								et_password.setText("");
 								showProgress(false);									
 							}
 						});
@@ -313,58 +315,5 @@ public class LoginActivity extends Activity {
 			view_login_form.setVisibility(show ? View.GONE : View.VISIBLE);
 		}
 	}
-	
-	
-	
-	
-
-	/**
-	 * Represents an asynchronous login/registration task used to authenticate
-	 * the user.
-	 */
-//	public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
-//		@Override
-//		protected Boolean doInBackground(Void... params) {
-//			// TODO: attempt authentication against a network service.
-//
-//			try {
-//				// Simulate network access.
-//				Thread.sleep(2000);
-//			} catch (InterruptedException e) {
-//				return false;
-//			}
-//
-//			for (String credential : DUMMY_CREDENTIALS) {
-//				String[] pieces = credential.split(":");
-//				if (pieces[0].equals(username)) {
-//					// Account exists, return true if the password matches.
-//					return pieces[1].equals(password);
-//				}
-//			}
-//
-//			// TODO: register the new account here.
-//			return true;
-//		}
-//
-//		@Override
-//		protected void onPostExecute(final Boolean success) {
-//			task_login = null;
-//			showProgress(false);
-//
-//			if (success) {
-//				finish();
-//			} else {
-//				et_password
-//						.setError(getString(R.string.error_incorrect_password));
-//				et_password.requestFocus();
-//			}
-//		}
-//
-//		@Override
-//		protected void onCancelled() {
-//			task_login = null;
-//			showProgress(false);
-//		}
-//	}
 	
 }

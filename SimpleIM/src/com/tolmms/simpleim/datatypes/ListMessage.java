@@ -114,7 +114,7 @@ public class ListMessage {
 			Element u_port = doc.createElement(MessageXMLTags.PORT_TAG);
 			u_port.setTextContent(u.port);
 			Element u_status = doc.createElement(MessageXMLTags.STATUS_TAG);
-			u_status.setTextContent(u.port);
+			u_status.setTextContent(u.status);
 			
 			entry.appendChild(u_username);
 			entry.appendChild(u_ip);

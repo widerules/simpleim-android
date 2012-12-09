@@ -3,9 +3,11 @@ package com.tolmms.simpleim;
 import java.util.Vector;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -14,11 +16,14 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -181,11 +186,60 @@ public class LoggedUser extends Activity {
 				String selectedUser = TemporaryStorage.user_list.get(arg2).getUsername();
 				
 				Intent a = new Intent(LoggedUser.this, ChatActivity.class);
+				a.setAction(ChatActivity.MESSAGE_TO_A_USER);
 				a.putExtra(ChatActivity.USERNAME_TO_CHAT_WITH_EXTRA, selectedUser);
 				startActivity(a);
 			}
 		});
+		
+		
+		((Button) findViewById(R.id.btn_chatall)).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				LayoutInflater li = LayoutInflater.from(LoggedUser.this);
+				View promptsView = li.inflate(R.layout.chat_all, null);
+ 
+				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(LoggedUser.this);
+ 
+				// set prompts.xml to alertdialog builder
+				alertDialogBuilder.setView(promptsView);
+ 
+				final EditText userInput = (EditText) promptsView.findViewById(R.id.et_message_to_all);
+				
+				// set dialog message
+				alertDialogBuilder.setCancelable(false).setTitle(getString(R.string.it_chat_all_button))
+					.setPositiveButton(getString(R.string.it_send_message), new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog,int id) {
+							String msg = userInput.getText().toString();
+							
+							if (msg.isEmpty())
+								Toast.makeText(LoggedUser.this, getString(R.string.it_error_cannot_send_empty_message), Toast.LENGTH_SHORT).show();
+							else 
+								iMService.sendMessageToAll(msg);
+					}})
+					.setNegativeButton(getString(R.string.it_cancel), new DialogInterface.OnClickListener() {
+					    public void onClick(DialogInterface dialog,int id) {
+					    	dialog.cancel();
+					    }
+					});
+ 
+				// create alert dialog
+				AlertDialog alertDialog = alertDialogBuilder.create();
+ 
+				// show it
+				alertDialog.show();
+			}
+		});
+		
+		((Button) findViewById(R.id.btn_map)).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				startActivity(new Intent(LoggedUser.this, MapActivity.class));
+			}
+		});
 	}
+	
+
 	
 	
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
@@ -212,6 +266,20 @@ public class LoggedUser extends Activity {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.activity_logged_user, menu);
 		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    // Handle item selection
+	    switch (item.getItemId()) {
+	    case R.id.menu_logout:
+	        iMService.exit();
+	        startActivity(new Intent(LoggedUser.this, MainActivity.class));
+	        LoggedUser.this.finish();
+	        return true;
+	    default:
+	        return super.onOptionsItemSelected(item);
+	    }
 	}
 	
 	
