@@ -41,15 +41,19 @@ public class Communication implements ICommunication {
 	UdpListenerThread udpListener = null;
 	
 	String serverIpString = "10.0.2.2";
-	int serverTcpPort = 4445;
-	int serverTcpTimeout = 1 * 1000; //miliseconds
+	private int serverTcpPort = 4445;
+	private int serverUdpPort = 4445;
+	private int serverTcpTimeout = 1 * 1000; //miliseconds
+	private int serverUDPTimeout = 5 * 1000; //miliseconds
 	
 	int serviceUdpPort = 50000;
-	int UDP_BUFFER_LEN = 4096; // bytes
+	int UDP_BUFFER_LEN = 10 * 1024; // 10 Kbytes
 	
 	UserInfo myinfo = null;
 	
 	IAppManagerForComm service = null;
+
+	
 
 	public Communication(IAppManagerForComm service) {
 		
@@ -58,8 +62,120 @@ public class Communication implements ICommunication {
 	}
 
 	@Override
-	public boolean login(String username, String password) 
+	public UserInfo login(String username, String password) 
 			throws UsernameOrPasswordException, CommunicationException, UnknownHostException {
+		DatagramSocket s = null;
+		
+		DatagramPacket packet;
+		byte[] buf;
+		
+		String msg = "";
+		String answer = "";
+		LoginMessage loginMessage = null;
+		ListMessage listMessage = null;
+		
+		LoginMessageAnswer login_message_answer;
+		
+		if (myinfo != null)
+			return myinfo;		
+		
+		try {
+			s = new DatagramSocket(serviceUdpPort);
+		} catch (SocketException e1) {
+			throw new CommunicationException("opening the datagram socket");
+		}
+		
+		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
+		
+		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), String.valueOf(serviceUdpPort));
+		loginMessage = new LoginMessage(tempInfo, password);
+		
+		try {
+			msg = loginMessage.toXML();
+			
+			packet = new DatagramPacket(msg.getBytes(), msg.getBytes().length, InetAddress.getByName(serverIpString), serverUdpPort);
+			
+			s.send(packet);
+		
+		}  catch (ParserConfigurationException e) {
+			s.close();
+			throw new CommunicationException("sending login message (ParserConfigurationException)");
+		} catch (TransformerException e) {
+			s.close();
+			throw new CommunicationException("sending login message (TransformerException)");
+		} catch (IOException e) {
+			s.close();
+			throw new CommunicationException("sending login message (IOException)");
+		}
+		
+		try {
+			s.setSoTimeout(serverUDPTimeout);
+		} catch (SocketException e) {
+			s.close();
+			throw new CommunicationException("setting timeout on socket");
+		}
+		
+		try {
+			buf = new byte[UDP_BUFFER_LEN];
+			packet = new DatagramPacket(buf, buf.length);
+			
+			s.receive(packet);
+			answer = new String(buf).trim();
+			
+			if (answer == null)
+				throw new IOException();
+	
+			login_message_answer = LoginMessageAnswer.fromXML(answer);
+			if (!login_message_answer.accepted()) {
+				if (MainActivity.DEBUG)
+					Log.d("Login - got the first answer", "REFUSED");
+				s.close();
+				throw new UsernameOrPasswordException();
+			}
+		} catch (XmlMessageReprException e) {
+			s.close();
+			throw new CommunicationException("reciving the answer of login XmlMessageReprException - " + answer);
+		} catch (IOException e) {
+			s.close();
+			throw new CommunicationException("reciving the answer of login IOException - "+answer);
+		}
+		
+		answer = null;
+		
+		try {
+			buf = new byte[UDP_BUFFER_LEN];
+			packet = new DatagramPacket(buf, buf.length);
+			s.receive(packet);
+			answer = new String(buf).trim();
+			
+			if (answer == null)
+				throw new IOException();
+			
+			listMessage = ListMessage.fromXML(answer);
+			if (MainActivity.DEBUG) {
+				Log.d("Login - got the second answer", "got the users list");
+				Log.d("Login - got the second answer", answer);
+			}
+			
+		} catch (XmlMessageReprException e) {
+			s.close();
+			throw new CommunicationException("reciving the second answer of login XmlMessageReprException");
+		} catch (IOException e) {
+			s.close();
+			throw new CommunicationException("reciving the second answer of login IOException");
+		}
+		
+		s.close();
+		
+		
+		service.setUserList(listMessage.getUserList());
+		
+		tempInfo.setPort(login_message_answer.getUser().getPort());
+		tempInfo.setIP(login_message_answer.getUser().getIp());
+		
+		myinfo = tempInfo;
+		
+		/*
 		Socket s = null;		
 		BufferedReader reader = null;
 		PrintWriter writer = null;
@@ -70,7 +186,7 @@ public class Communication implements ICommunication {
 		ListMessage listMessage = null;
 		
 		if (myinfo != null)
-			return true;		
+			return myinfo;		
 		
 		
 		try {
@@ -158,12 +274,12 @@ public class Communication implements ICommunication {
 		
 		service.setUserList(listMessage.getUserList());
 		myinfo = tempInfo;
-		
+		*/
 		
 //		announceIAmOnline(listMessage.getUserList());
 //		startListeningForMessages();
 		
-		return true;
+		return myinfo;
 	}
 	
 //	private void announceIAmOnline(Vector<UserInfo> userList) {
@@ -313,7 +429,7 @@ public class Communication implements ICommunication {
 		
 		//send a logout message;
 		
-		udpListener.stopListening();
+//		udpListener.stopListening();
 		udpListener = null;
 		myinfo = null;
 		udpListener = null;
@@ -321,7 +437,88 @@ public class Communication implements ICommunication {
 	}
 
 	@Override
-	public void register(String username, String password, String email) throws CommunicationException, UsernameAlreadyExistsException, UnknownHostException {
+	public void register(String username, String password) throws CommunicationException, UsernameAlreadyExistsException, UnknownHostException {
+		DatagramSocket s = null;
+		
+		DatagramPacket packet;
+		byte[] buf;
+		
+		String msg = "";
+		String answer = "";
+		RegisterMessage registerMessage = null;
+		
+		RegisterMessageAnswer register_message_answer;
+		
+		//TODO DA RIVEDERE QUI
+		if (myinfo != null)
+			return;		
+		
+		try {
+			s = new DatagramSocket(serviceUdpPort);
+		} catch (SocketException e1) {
+			throw new CommunicationException("opening the datagram socket");
+		}
+
+		// TODO da mettere al posto di s.connect(,) mettere quella con un solo paramentro...
+		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
+		
+		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), String.valueOf(serviceUdpPort));
+		registerMessage = new RegisterMessage(tempInfo, password);
+		
+		try {
+			msg = registerMessage.toXML();
+			
+			packet = new DatagramPacket(msg.getBytes(), msg.getBytes().length, InetAddress.getByName(serverIpString), serverUdpPort);
+			
+			s.send(packet);
+		
+		}  catch (ParserConfigurationException e) {
+			s.close();
+			throw new CommunicationException("sending register message (ParserConfigurationException)");
+		} catch (TransformerException e) {
+			s.close();
+			throw new CommunicationException("sending register message (TransformerException)");
+		} catch (IOException e) {
+			s.close();
+			throw new CommunicationException("sending register message (IOException)");
+		}
+		
+		try {
+			s.setSoTimeout(serverUDPTimeout);
+		} catch (SocketException e) {
+			s.close();
+			throw new CommunicationException("setting timeout on socket");
+		}
+		
+		try {
+			buf = new byte[UDP_BUFFER_LEN];
+			packet = new DatagramPacket(buf, buf.length);
+			
+			s.receive(packet);
+			answer = new String(buf).trim();
+			
+			if (answer == null)
+				throw new IOException();
+	
+			register_message_answer = RegisterMessageAnswer.fromXML(answer);
+			if (!register_message_answer.accepted()) {
+				if (MainActivity.DEBUG)
+					Log.d("register - got the answer", "REFUSED");
+				s.close();
+				throw new UsernameAlreadyExistsException();
+			}
+		} catch (XmlMessageReprException e) {
+			s.close();
+			throw new CommunicationException("reciving the answer of register XmlMessageReprException - " + answer);
+		} catch (IOException e) {
+			s.close();
+			throw new CommunicationException("reciving the answer of register IOException - "+answer);
+		}
+		
+
+		s.close();
+		
+		/*
 		Socket s = null;		
 		BufferedReader reader = null;
 		PrintWriter writer = null;
@@ -391,6 +588,13 @@ public class Communication implements ICommunication {
 		} catch (IOException e) {
 			throw new CommunicationException();
 		}
+		*/
+	}
+
+	@Override
+	public void sendMessage(UserInfo myInfo, UserInfo user_to_chat, String the_message) {
+		// TODO da fare
+		
 	}
 
 }

@@ -12,7 +12,7 @@ public class Tools {
 		alertDialogBuilder.setMessage(message).setCancelable(false).setNeutralButton("Ok", new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				dialog.cancel(); // or dismiss?			
+				dialog.cancel(); // or dismiss?	
 			}
 		});
 		

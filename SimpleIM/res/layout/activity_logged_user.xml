@@ -9,7 +9,28 @@
     <ListView
         android:id="@+id/ListView01"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="0dp" 
+        android:layout_weight="1">
     </ListView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:layout_marginTop="5dp">
+
+        <Button
+            android:id="@+id/btn_map"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/it_view_on_map_button" 
+            android:layout_weight="1"/>
+        <Button
+            android:id="@+id/btn_chatall"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/it_chat_all_button" 
+            android:layout_weight="1"/>
+
+    </LinearLayout>
 
 </LinearLayout>

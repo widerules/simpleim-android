@@ -99,5 +99,9 @@ public class RegisterMessage {
 	public UserInfo getUser() {
 		return user;
 	}
+	
+	public String getPassword() {
+		return password;
+	}
 
 }

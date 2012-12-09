@@ -2,14 +2,6 @@ package com.tolmms.simpleim;
 
 import java.util.Vector;
 
-import com.tolmms.simpleim.datatypes.UserInfo;
-import com.tolmms.simpleim.interfaces.IAppManager;
-import com.tolmms.simpleim.services.IMService;
-import com.tolmms.simpleim.storage.TemporaryStorage;
-import com.tolmms.simpleim.tools.Tools;
-
-import android.os.Bundle;
-import android.os.IBinder;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -17,21 +9,48 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ArrayAdapter;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ChatActivity extends Activity {
-	
-	protected static final String USERNAME_TO_CHAT_WITH_EXTRA = "com.tolmms.simpleim.ChatActivity.USERNAME_EXTRA";
+import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.interfaces.IAppManager;
+import com.tolmms.simpleim.services.IMService;
+import com.tolmms.simpleim.storage.TemporaryStorage;
+import com.tolmms.simpleim.tools.Tools;
 
+public class ChatActivity extends Activity {
+	public static final String USERNAME_TO_CHAT_WITH_EXTRA = "com.tolmms.simpleim.ChatActivity.USERNAME_EXTRA";
+
+	public static final String MESSAGE_TO_ALL_ACTION = "com.tolmms.simpleim.ChatActivity.MESSAGE_TO_ALL_ACTION";
+	public static final String MESSAGE_TO_A_USER = "com.tolmms.simpleim.ChatActivity.MESSAGE_TO_A_USER";
+	
+
+	private String username_to_chat;
+	private ImageView iv_status_user;
+	private ListView l;
+	
+	boolean isOnline;
+	
+	private Vector<String> user_messages;
+	
+	private ChatListAdapter cla;
+	
+	
+	
 	/***********************************/
 	/* stuff for service */
 	/***********************************/
@@ -44,8 +63,15 @@ public class ChatActivity extends Activity {
             // unexpectedly disconnected - that is, its process crashed.
             // Because it is running in our same process, we should never see this happen
 			
+			
+			iMService.unsetCurrentUserChat();
+			
 			iMService = null;
-			Toast.makeText(ChatActivity.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
+			
+			if (MainActivity.DEBUG)
+				Toast.makeText(ChatActivity.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
+			
+			
 		}
 		
 		@Override
@@ -61,14 +87,64 @@ public class ChatActivity extends Activity {
 			if (MainActivity.DEBUG)
 				Toast.makeText(ChatActivity.this, "chiamato onServiceConnected", Toast.LENGTH_SHORT).show();
 			
+			
+			
 			//TODO mettere per da vero!
 //			if (!iMService.isUserLoggedIn()) {
 //				startActivity(new Intent(LoggedUser.this, MainActivity.class));
 //				LoggedUser.this.finish();
 //			}
+			
+			iMService.setCurrentUserChat(username_to_chat);
 		}
 		
 	};
+	
+	
+	/**********************************/
+	
+	
+	/* Adapter for retriving the messages */
+	private class ChatListAdapter extends BaseAdapter {
+		private LayoutInflater mInflater;
+		
+		public ChatListAdapter(Context context) {
+			mInflater = LayoutInflater.from(context);
+		}
+
+		public int getCount() {
+			return user_messages.size();
+		}
+
+		public Object getItem(int position) {
+			return user_messages.get(position);
+		}
+
+		public long getItemId(int position) {
+			return position;
+		}
+		
+		/*
+		 * render the listview not selectable
+		 */
+		public boolean isEnabled(int position) {
+			return false;
+		}
+
+		public View getView(int position, View convertView, ViewGroup parent) {
+			TextView holder;
+			if (convertView == null) {
+				convertView = mInflater.inflate(R.layout.listview_row_chat, null);
+				holder = (TextView) convertView.findViewById(R.id.tv_row_chat);
+				convertView.setTag(holder);
+			} else {
+				holder = (TextView) convertView.getTag();
+			}
+			holder.setText(user_messages.get(position));
+
+			return convertView;
+		}
+	}
 	
 	
 	@Override
@@ -78,6 +154,8 @@ public class ChatActivity extends Activity {
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(statusChangesMessageReceiver);
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(messagesMessageReceiver);
 		
+//		iMService.unsetCurrentUserChat();
+		
 		super.onPause();
 	}
 	
@@ -85,77 +163,87 @@ public class ChatActivity extends Activity {
 	protected void onResume() {
 		bindService(new Intent(ChatActivity.this, IMService.class), serviceConnection, Context.BIND_AUTO_CREATE);
 		
-		LocalBroadcastManager.getInstance(this).registerReceiver(statusChangesMessageReceiver, 
-				new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
-		LocalBroadcastManager.getInstance(this).registerReceiver(messagesMessageReceiver, 
-				new IntentFilter(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT));
+		LocalBroadcastManager.
+		getInstance(this).
+		registerReceiver(statusChangesMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
 		
+		LocalBroadcastManager.
+		getInstance(this).
+		registerReceiver(messagesMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT));
+		
+		
+		updateChatView();
+		updateUserStatus(TemporaryStorage.getUserInfoByUsername(username_to_chat).getStatus());
+		
+//		iMService.setCurrentUserChat(username_to_chat);
 		
 		super.onResume();
 	}
-	
-	/**********************************/
 
-	
-	String username_to_chat;
-	ImageView iv_status_user;
-	boolean isOnline;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
-		Button b = (Button) findViewById(R.id.bt_send);
-		ListView l = (ListView) findViewById(R.id.lv_chat_list);
-		
 		Intent myIntent = getIntent();
 		
-		if ((username_to_chat = (String) myIntent.getExtras().get(USERNAME_TO_CHAT_WITH_EXTRA)) == null) {
+		if (!myIntent.getAction().equals(MESSAGE_TO_A_USER))
+			this.finish();
+		
+		username_to_chat = (String) myIntent.getExtras().get(USERNAME_TO_CHAT_WITH_EXTRA);
+		
+		if (username_to_chat == null) {
 //			in order to chat with someone I need to have a username
 			this.finish();
 		}
 		
+		user_messages = TemporaryStorage.getMessagesByUsername(username_to_chat);
 		
 		((TextView) findViewById(R.id.tv_friend_username_chat)).setText(username_to_chat);
 		iv_status_user = (ImageView) findViewById(R.id.iv_user_status_chat);
+		l = (ListView) findViewById(R.id.lv_chat_list);
 		
-		updateUserStatus();
+		cla = new ChatListAdapter(this);
 		
-		
-		LocalBroadcastManager.getInstance(this).registerReceiver(statusChangesMessageReceiver, 
-								new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
-		LocalBroadcastManager.getInstance(this).registerReceiver(messagesMessageReceiver, 
-				new IntentFilter(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT));
+		l.setAdapter(cla);
+		l.setSmoothScrollbarEnabled(true);
 		
 		
-				
+		Log.d("aaaaaaaaaaaaa", TemporaryStorage.getUserInfoByUsername(username_to_chat).toString());
 		
-//		final ArrayAdapter<String> aa = new ArrayAdapter<String>(this, R.layout.listview_row_chat, msgs);
-//		
-//		l.setAdapter(aa);
-//		l.setSmoothScrollbarEnabled(true);
-//		
-//		aa.notifyDataSetChanged();
-//		
-//		ll.smoothScrollToPosition(ll.getCount() - 1);
+		updateUserStatus(TemporaryStorage.getUserInfoByUsername(username_to_chat).getStatus());
+		
+		LocalBroadcastManager.
+		getInstance(this).
+		registerReceiver(statusChangesMessageReceiver, 
+				new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
+		
+		LocalBroadcastManager.
+		getInstance(this).
+		registerReceiver(messagesMessageReceiver, 
+				new IntentFilter(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT));	
 		
 		
-		b.setOnClickListener(new OnClickListener() {
+		
+		((Button) findViewById(R.id.bt_send)).setOnClickListener(new OnClickListener() {
 			TextView tv_send_msg = (TextView) findViewById(R.id.et_message_to_send);
 			@Override
 			public void onClick(View v) {
-				if (!isOnline)
+				if (!isOnline) {
 					Tools.showMyDialog(getString(R.string.it_error_cannot_chat_with_offline_user), ChatActivity.this);
+					return;
+				}
 				
+				String the_message = tv_send_msg.getText().toString().trim();
 				
-				String the_message = tv_send_msg.getText().toString();
-				
+				if (the_message.isEmpty()) {
+					Toast.makeText(ChatActivity.this, getString(R.string.it_error_cannot_send_empty_message), Toast.LENGTH_SHORT).show();
+					return;
+				}
 				
 				iMService.sendMessage(username_to_chat, the_message);
-				
-				
-//				iMService.sendMessage()
+				tv_send_msg.setText("");
 			}
 		});
 	}
@@ -166,27 +254,18 @@ public class ChatActivity extends Activity {
 	    public void onReceive(Context context, Intent intent) {
 	        String action = intent.getAction();
 	        String intentUsername;
-	        String intentState;
+	        String newUserState;
 	        
 	        
 	        if (!action.equals(IAppManager.INTENT_ACTION_USER_STATE_CHANGED))
 	        	return;
 	        
 	        intentUsername = intent.getStringExtra(IAppManager.INTENT_ACTION_USER_STATE_CHANGED_USERNAME_EXTRA);
-	        
 	        if (!intentUsername.equals(username_to_chat))
 	        	return;
 	        
-	        
-	        intentState = intent.getStringExtra(IAppManager.INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA);
-	        
-	        if (UserInfo.ONLINE_STATUS.equals(intentState)) {
-	        	isOnline = true;
-	        	iv_status_user.setImageResource(R.drawable.ic_status_online);
-	        } else {
-	        	isOnline = false;
-	        	iv_status_user.setImageResource(R.drawable.ic_status_offline);
-	        }
+	        newUserState = intent.getStringExtra(IAppManager.INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA);
+	        updateUserStatus(newUserState);
 	        
 	        if (MainActivity.DEBUG)
 	        	Toast.makeText(ChatActivity.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
@@ -200,7 +279,6 @@ public class ChatActivity extends Activity {
 	    public void onReceive(Context context, Intent intent) {
 	        String action = intent.getAction();
 	        String intentUsername;
-	        String intentState;
 	        
 	        
 	        if (!action.equals(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT))
@@ -212,8 +290,7 @@ public class ChatActivity extends Activity {
 	        if (!intentUsername.equals(username_to_chat))
 	        	return;
 	        
-	        
-//	        pesco ultimi TOT messaggi
+	        updateChatView();
 	        
 	        
 	        if (MainActivity.DEBUG)
@@ -222,22 +299,44 @@ public class ChatActivity extends Activity {
 	    }
 	};
 
-
-	private void updateUserStatus() {
-		isOnline = TemporaryStorage.getUserInfoByUsername(username_to_chat).isOnline();
-
-		if (isOnline)
-			iv_status_user.setImageResource(R.drawable.ic_status_online);
+	private void updateUserStatus(String userStatus) {
+        if (UserInfo.ONLINE_STATUS.equals(userStatus)) {
+        	isOnline = true;
+        	iv_status_user.setImageResource(R.drawable.ic_status_online);
+        } else {
+        	isOnline = false;
+        	iv_status_user.setImageResource(R.drawable.ic_status_offline);
+        }
+	}
+	
+	private void updateChatView() {
+		cla.notifyDataSetChanged();
+		if (l.getCount() > 0)
+			l.smoothScrollToPosition(l.getCount() - 1);
 		else
-			iv_status_user.setImageResource(R.drawable.ic_status_offline);
+			l.smoothScrollToPosition(l.getCount());
 	}
 	
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.activity_chat, menu);
+		getMenuInflater().inflate(R.menu.activity_logged_user, menu);
 		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    // Handle item selection
+	    switch (item.getItemId()) {
+	    case R.id.menu_logout:
+	        iMService.exit();
+	        startActivity(new Intent(ChatActivity.this, MainActivity.class));
+	        ChatActivity.this.finish();
+	        return true;
+	    default:
+	        return super.onOptionsItemSelected(item);
+	    }
 	}
 
 }
