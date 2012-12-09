@@ -11,8 +11,8 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		new TcpServer(4445).run();
-		
+//		new TcpServer(4445).run();
+		new UdpServer().run();
 
 	}
 

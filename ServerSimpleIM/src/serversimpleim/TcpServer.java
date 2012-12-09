@@ -25,16 +25,13 @@ import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class TcpServer extends BaseServer {
-	public static final boolean DEBUG = true;
+	
 	// listener
     ServerSocket socket;
 // accepted incoming connection
     Socket incoming;
     BufferedReader in;
     PrintWriter out;
-    
-    
-    Vector<SimpleIMUser> registeredUsers;
 
 
     public TcpServer() throws IOException {
@@ -45,27 +42,7 @@ public class TcpServer extends BaseServer {
     public TcpServer(int port) throws IOException {
         super();
         socket = new ServerSocket(port);
-        registeredUsers = new Vector<>();
-        
-        if (DEBUG)
-        	registerDebugUsers();
     }
-
-
-    private void registerDebugUsers() {
-		registeredUsers.add(new SimpleIMUser(
-				new UserInfo("prova1", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS), 
-				"prova1"));
-		registeredUsers.add(new SimpleIMUser(
-				new UserInfo("prova2", "10.2.1.2", "2000", UserInfo.OFFLINE_STATUS), 
-				"prova2"));
-		registeredUsers.add(new SimpleIMUser(
-				new UserInfo("prova3", "10.2.1.3", "2000", UserInfo.OFFLINE_STATUS), 
-				"prova3"));
-		
-
-	}
-
 
 	public void run() {
         String request;
@@ -165,28 +142,28 @@ public class TcpServer extends BaseServer {
             		if (DEBUG) 
                 		System.out.println("Sending REFUSE login to \"" + userOfMessage.getUsername() +"\"");
                 	
-            		try {
-						answer = new LoginMessageAnswer().toXML();
-					} catch (ParserConfigurationException | TransformerException e) { 
-						//TODO cannot be here
-					}
+//            		try {
+//						answer = new LoginMessageAnswer().toXML();
+//					} catch (ParserConfigurationException | TransformerException e) { 
+//						//TODO cannot be here
+//					}
             		
             		out.println(answer);
             	} else {
             		if (DEBUG) 
                 		System.out.println("Sending ACCEPT login to \"" + userOfMessage.getUsername() +"\"");
                 	
-            		try {
-						answer = new LoginMessageAnswer("345675432345").toXML();
-					} catch (ParserConfigurationException | TransformerException e) { 
-						//TODO cannot be here
-					}
+//            		try {
+//						answer = new LoginMessageAnswer("345675432345").toXML();
+//					} catch (ParserConfigurationException | TransformerException e) { 
+//						//TODO cannot be here
+//					}
             		
             		out.println(answer);
             		
             		
             		ListMessage listMessage = new ListMessage();
-            		fillListMessage(listMessage);
+//            		fillListMessage(listMessage);
             		
             		try {
 						answer = listMessage.toXML();
@@ -213,7 +190,7 @@ public class TcpServer extends BaseServer {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
+					continue;
 				}
             	
             	
@@ -254,23 +231,6 @@ public class TcpServer extends BaseServer {
 			}
         }
     }
-
-
-    private void fillListMessage(ListMessage listMessage) {
-    	for (SimpleIMUser simu : registeredUsers) {
-    		listMessage.addUser(simu.getUser());
-		}
-	}
-
-
-	private SimpleIMUser getTheUserFromRegistered(UserInfo userOfMessage) {
-    	int index = registeredUsers.indexOf(new SimpleIMUser(userOfMessage, "DUMMY"));
-    	
-    	if (index == -1)
-    		return null;
-    	
-		return registeredUsers.get(index);
-	}
 
 
 	@Override
