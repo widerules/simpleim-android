@@ -4,242 +4,360 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.EmptyStackException;
+import java.util.Stack;
+import java.util.Vector;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import serversimpleim.datatypes.SimpleIMUser;
 
+import com.tolmms.simpleim.datatypes.CommunicationMessage;
 import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
 import com.tolmms.simpleim.datatypes.LoginMessageAnswer;
+import com.tolmms.simpleim.datatypes.LogoutMessage;
 import com.tolmms.simpleim.datatypes.Procedures;
 import com.tolmms.simpleim.datatypes.RegisterMessage;
 import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
+import com.tolmms.simpleim.datatypes.SomeOneLoginMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class UdpServer extends BaseServer {
-	    DatagramSocket socket = null;
+    public static final int UDP_BUFFER = 10 * 1024; // 10Kb
+    
+    DatagramSocket inSocket = null;
+    DatagramSocket outSocket = null;
+    
+    Vector<DatagramPacket> incomingRequests = null;
+    Vector<DatagramPacket> outgoingRequests = null;
+
+    HandleIncomingPackets handleIncomingPackets = null;
+    HandleRequests handleRequests = null;
+    HandleOutgoingPackets handleOutgoingPackets = null;
+    
+    final Lock lock = new ReentrantLock();
+    final Condition incomingPacketsLock  = lock.newCondition(); 
+    final Condition outgoingPacketsLock = lock.newCondition(); 
+
+
+
+    public UdpServer() throws IOException {
+    	this(4445);
+    }
+
+
+    public UdpServer(int port) throws IOException {
+        super();
+        inSocket = new DatagramSocket(port);
+        outSocket = new DatagramSocket();
+        
+        incomingRequests = new Vector<>();
+        outgoingRequests = new Vector<>();
+    }
+
+    public void run() {	    	  
+    	handleIncomingPackets = new HandleIncomingPackets();
+    	handleRequests = new HandleRequests();
+        handleOutgoingPackets = new HandleOutgoingPackets();
+        
+
+//        handleIncomingPackets.start();
+//        handleRequests.start();
+        handleOutgoingPackets.start();
+        
+    }
 	    
-	    public static final int UDP_BUFFER = 10 * 1024; // 10Kb
+	private class HandleIncomingPackets extends Thread {
+		private boolean canRun = true;
+		private byte[] buf;
+		private DatagramPacket packet;
 
+		@Override
+		public void run() {
+			while (canRun) {
+				
+				buf = new byte[UDP_BUFFER];
+				packet = new DatagramPacket(buf, buf.length);
 
-	    public UdpServer() throws IOException {
-	    	this(4445);
-	    }
-
-
-	    public UdpServer(int port) throws IOException {
-	        super();
-	        socket = new DatagramSocket(port);
-	    }
-
-
-	    public void run() {
-	        byte[] buf;
-	        String request;
-	        DatagramPacket packet;
-	    	  
-	        while (true) {
-
-	            buf = new byte[UDP_BUFFER];
-	            packet = new DatagramPacket(buf, buf.length);
-            
-                try {
-					socket.receive(packet);
+				try {
+					inSocket.receive(packet);
 				} catch (IOException e2) {
-					if (DEBUG) 
-                		System.out.println("ops... receiving a packet from socket");	 
+					if (DEBUG)
+						System.out.println("ops... receiving a packet from socket");
 					continue;
 				}
-                
-                request = new String(buf).trim();
-                
-                
-                String message_type = null;
-                try {
-                message_type = Procedures.getMessageType(request);
-                } catch (XmlMessageReprException e) {
-    					if (DEBUG)
-                    		System.out.println("Cannot get the message type :( " + e.getMessage());
-                   continue;
-                }
-                
-                
-                
-                if (message_type == null) {
-                	if (DEBUG) 
-                		System.out.println("message type is null");	                    
-                    continue;
-                }
-                
-                
-                
-                if (Procedures.isLoginMessage(message_type)) {
-                	LoginMessage lm = null;
-                	UserInfo userOfMessage = null;
-                	String password = null;
-                	
-                	
-                	try {
-    					lm = LoginMessage.fromXML(request);
-    				} catch (XmlMessageReprException e1) {
-    					if (DEBUG) 
-                    		System.out.println("Login message cannot be serialized :(");
-    					continue;
-    				}
-                	
-                	userOfMessage = lm.getUser();
-                	password = lm.getPassword();
-                	
-                	if (DEBUG) 
-                		System.out.println("Login message recieved from \"" + userOfMessage.getUsername() +"\"");
-                	
-                	SimpleIMUser s = getTheUserFromRegistered(userOfMessage);
-                	
-                	String answer = null;
-                	
-                	if (s == null || (s != null && !s.samePassword(password))) {
-                		if (DEBUG) 
-                    		System.out.println("Sending REFUSE login to \"" + userOfMessage.getUsername() +"\"");
-                    	
-                		try {
-    						answer = new LoginMessageAnswer(userOfMessage).toXML();
-    					} catch (ParserConfigurationException | TransformerException e) { 
-    						//TODO cannot be here
-    					}
-                		
-                		buf = answer.getBytes();
-                		
-                		InetAddress address = packet.getAddress();
-                		int port = packet.getPort();
-                		
-//                		System.out.println(answer);
-                		
-                		packet = new DatagramPacket(answer.getBytes(), answer.getBytes().length, address, port);
-                		
-                		
-                		
-                		try {
-							socket.send(packet);
-						} catch (IOException e) {
-							if (DEBUG) 
-		                		System.out.println("sending the refuse login");	 
-							continue;
-						}
-                	} else {
-                		if (DEBUG) 
-                    		System.out.println("Sending ACCEPT login to \"" + userOfMessage.getUsername() +"\"");
-                		
-                		InetAddress address = packet.getAddress();
-                		int port = packet.getPort();
-                		
-                		s.getUser().setAltitude(userOfMessage.getAltitude());
-                		s.getUser().setLatitude(userOfMessage.getLatitude());
-                		s.getUser().setLongitude(userOfMessage.getLongitude());
-                		s.getUser().setIP(address.toString());
-                		s.getUser().setPort(String.valueOf(port));
-                		
-                		
-                		try {
-    						answer = new LoginMessageAnswer(s.getUser(), String.valueOf(s.getUser().hashCode())).toXML();
-    					} catch (ParserConfigurationException | TransformerException e) { 
-    						if (DEBUG) 
-    	                		System.out.println("ops... making a loginAnswer message");
-    						continue;
-    					}
-                		
-                		try {
-                			socket.send(new DatagramPacket(answer.getBytes(),  answer.getBytes().length, address, port));
-                		} catch (IOException e) {
-							if (DEBUG) 
-		                		System.out.println("sending the accept login");	 
-							continue;
-						}
-                		
-                		
-                		ListMessage listMessage = new ListMessage();
-                		fillListMessage(listMessage, s);
-                		
-                		try {
-    						answer = listMessage.toXML();
-    					} catch (ParserConfigurationException | TransformerException e) { }
-                		
-                		buf = answer.getBytes();
-                		
-                		try {
-                			socket.send(new DatagramPacket(buf,  buf.length, address, port));
-                		} catch (IOException e) {
-							if (DEBUG) 
-		                		System.out.println("sending the userlist message");	 
-							continue;
-						}
-                		
-                    	s.getUser().setOnline();
-                	}                	
-                } else if (Procedures.isRegisterMessage(message_type)) {
-                	RegisterMessage rm = null;
-                	
-                	try {
-    					rm = RegisterMessage.fromXML(request);
-    				} catch (XmlMessageReprException e) {
-    					if (DEBUG) 
-                    		System.out.println("Register message cannot be serialized :(");   					
-    				}
-                	
-                	
-                	if (DEBUG) 
-                		System.out.println("Register message recieved from \"" + rm.getUser().getUsername() +"\"");
-                	
-                	String answer = null;
-                	if (registeredUsers.contains(new SimpleIMUser(rm.getUser(), "DUMMY"))) {
-                		if (DEBUG) 
-                    		System.out.println("Sending REFUSE register to \"" + rm.getUser().getUsername() +"\"");
-                    	
-                		try {
-    						answer = new RegisterMessageAnswer(RegisterMessageAnswer.REFUSED).toXML();
-    					} catch (ParserConfigurationException | TransformerException e) {
-        					if (DEBUG) 
-                        		System.out.println("ops... should not be here :("); 
-    					}               		
-                	} else {
-                		if (DEBUG) 
-                    		System.out.println("Sending ACCEPT register to \"" + rm.getUser().getUsername() +"\"");
-                    	
-                		rm.getUser().setOffline();
-                		registeredUsers.add(new SimpleIMUser(rm.getUser(), rm.getPassword()));
-                		
-                		try {
-    						answer = new RegisterMessageAnswer(RegisterMessageAnswer.ACCEPTED).toXML();
-    					} catch (ParserConfigurationException | TransformerException e) {
-    						if (DEBUG) 
-                        		System.out.println("ops... should not be here :("); 
-    					}
-                	}
-                	
-                	buf = answer.getBytes();
-            		InetAddress address = packet.getAddress();
-            		int port = packet.getPort();
-            		
-            		packet = new DatagramPacket(buf,  buf.length, address, port);
-            		try {
-						socket.send(packet);
-					} catch (IOException e) {
-						if (DEBUG) 
-	                		System.out.println("sending the register answer message");	 
-						continue;
-					}         	
-                }
-	        }
-	    }
 
+				incomingRequests.add(packet);
 
-	    @Override
-	    protected void finalize() throws Throwable {
-	    	socket.close();
-	        super.finalize();
-	    }
+				if (incomingRequests.size() == 1)
+					handleRequests.notify();
+			}
+		}
+		
+		public void stopHandleMessages() {
+			canRun = false;
+			notify();
+		}
+	}
+	    
+	private class HandleOutgoingPackets extends Thread {
+		private boolean canRun = true;
+
+		@Override
+		public void run() {
+			while (canRun) {
+				DatagramPacket dp = null;
+				if (outgoingRequests.isEmpty())
+					try {
+						outgoingRequests.wait();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+				dp = outgoingRequests.remove(0);
+
+				try {
+					outSocket.send(dp);
+				} catch (IOException e) {
+					if (DEBUG)
+						System.out.println("could not send a message: " + dp.toString());
+				}
+			}
+		}
+
+		public void stopHandleMessages() {
+			canRun = false;
+			notify();
+		}
 
 	}
+	    
+	private class HandleRequests extends Thread {
+		private boolean canRun = true;
+
+		@Override
+		public void run() {
+			while (canRun) {
+				DatagramPacket dp = null;
+				if (incomingRequests.isEmpty())
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+				dp = incomingRequests.remove(0);
+
+				String the_msg = new String(dp.getData(), 0, dp.getLength());
+				the_msg = the_msg.trim();
+
+				String message_type = null;
+				try {
+					message_type = Procedures.getMessageType(the_msg);
+				} catch (XmlMessageReprException e) {
+					if (DEBUG)
+						System.out.println("Cannot get the message type :( " + e.getMessage());
+					continue;
+				}
+
+				if (message_type == null) {
+					if (DEBUG)
+						System.out.println("message type is null");
+					continue;
+				}
+
+				if (Procedures.isLoginMessage(message_type)) {
+					manageLoginRequest(dp);
+				} else if (Procedures.isRegisterMessage(message_type)) {
+					manageRegisterRequest(dp);
+				} else if (Procedures.isCommunicationMessage(message_type)) {
+					CommunicationMessage cm = null;
+					try {
+						cm = CommunicationMessage.fromXML(the_msg);
+					} catch (XmlMessageReprException e) {
+						continue;
+					}
+
+				} else if (Procedures.isLogoutMessage(message_type)) {
+					LogoutMessage solm = null;
+					try {
+						solm = LogoutMessage.fromXML(the_msg);
+					} catch (XmlMessageReprException e) {
+						continue;
+					}
+
+				} else if (Procedures.isSomeOneLoginMessage(message_type)) {
+					SomeOneLoginMessage solm = null;
+
+					try {
+						solm = SomeOneLoginMessage.fromXML(the_msg);
+					} catch (XmlMessageReprException e) {
+						continue;
+					}
+
+				}
+
+				// do stuff
+			}
+		}
+
+		public void stopHandleMessages() {
+			canRun = false;
+			notify();
+		}
+	}
+
+	private void manageLoginRequest(DatagramPacket packet) {
+    	String request = new String(packet.getData(), 0, packet.getLength());
+    	
+    	LoginMessage lm = null;
+    	UserInfo userOfMessage = null;
+    	String password = null;
+    	SimpleIMUser s;
+    	String answer = null;
+    	
+    	InetAddress address;
+		int port;
+    	
+    	try {
+			lm = LoginMessage.fromXML(request);
+		} catch (XmlMessageReprException e1) {
+			if (DEBUG) 
+        		System.out.println("Login message cannot be serialized :(");
+		}
+    	
+    	userOfMessage = lm.getUser();
+    	password = lm.getPassword();
+    	
+    	if (DEBUG) 
+    		System.out.println("Login message recieved from \"" + userOfMessage.getUsername() +"\"");
+    	
+    	s = getTheUserFromRegistered(userOfMessage);
+    	
+    	if (s == null || (s != null && !s.samePassword(password))) {
+    		if (DEBUG) 
+        		System.out.println("Sending REFUSE login to \"" + userOfMessage.getUsername() +"\"");
+        	
+    		try {
+				answer = new LoginMessageAnswer(userOfMessage).toXML();
+			} catch (ParserConfigurationException | TransformerException e) {
+				if (DEBUG) 
+            		System.out.println("ops... should not be here :(");
+			}
+    		
+    		address = packet.getAddress();
+    		port = packet.getPort();
+
+    		outgoingRequests.add(new DatagramPacket(answer.getBytes(), answer.getBytes().length, address, port));
+    		//TODO forse da lasciare??
+    		if (outgoingRequests.size() == 1)
+				handleOutgoingPackets.notify();
+    	} else {
+    		if (DEBUG) 
+        		System.out.println("Sending ACCEPT login to \"" + userOfMessage.getUsername() +"\"");
+    		
+    		address = packet.getAddress();
+    		port = packet.getPort();
+    		
+    		s.getUser().setAltitude(userOfMessage.getAltitude());
+    		s.getUser().setLatitude(userOfMessage.getLatitude());
+    		s.getUser().setLongitude(userOfMessage.getLongitude());
+    		s.getUser().setIP(address.toString());
+    		s.getUser().setPort(String.valueOf(port));
+    		
+    		
+    		try {
+				answer = new LoginMessageAnswer(s.getUser(), String.valueOf(s.getUser().hashCode())).toXML();
+			} catch (ParserConfigurationException | TransformerException e) { 
+				if (DEBUG) 
+            		System.out.println("ops... making a loginAnswer message");
+			}
+    		
+    		outgoingRequests.add(new DatagramPacket(answer.getBytes(), answer.getBytes().length, address, port));
+    		//TODO forse da lasciare??
+    		if (outgoingRequests.size() == 1)
+				handleOutgoingPackets.notify();
+				
+    		ListMessage listMessage = new ListMessage();
+    		fillListMessage(listMessage, s);
+    		
+    		try {
+				answer = listMessage.toXML();
+			} catch (ParserConfigurationException | TransformerException e) { }
+    		
+    		outgoingRequests.add(new DatagramPacket(answer.getBytes(),  answer.getBytes().length, address, port));
+    		//TODO forse da lasciare??
+    		if (outgoingRequests.size() == 1)
+				handleOutgoingPackets.notify();     		
+        	s.getUser().setOnline();
+    	}
+    }
+    
+	private void manageRegisterRequest(DatagramPacket dp) {
+		String request = new String(dp.getData(), 0, dp.getLength());
+		RegisterMessage rm = null;
+		String answer = null;
+    	
+    	try {
+			rm = RegisterMessage.fromXML(request);
+		} catch (XmlMessageReprException e) {
+			if (DEBUG) 
+        		System.out.println("Register message cannot be serialized :(");   					
+		}
+    	
+    	if (DEBUG) 
+    		System.out.println("Register message recieved from \"" + rm.getUser().getUsername() +"\"");
+    	
+    	
+    	if (registeredUsers.contains(new SimpleIMUser(rm.getUser(), "DUMMY"))) {
+    		if (DEBUG) 
+        		System.out.println("Sending REFUSE register to \"" + rm.getUser().getUsername() +"\"");
+        	
+    		try {
+				answer = new RegisterMessageAnswer(RegisterMessageAnswer.REFUSED).toXML();
+			} catch (ParserConfigurationException | TransformerException e) {
+				if (DEBUG) 
+            		System.out.println("ops... should not be here :("); 
+			}               		
+    	} else {
+    		if (DEBUG) 
+        		System.out.println("Sending ACCEPT register to \"" + rm.getUser().getUsername() +"\"");
+        	
+    		rm.getUser().setOffline();
+    		registeredUsers.add(new SimpleIMUser(rm.getUser(), rm.getPassword()));
+    		
+    		try {
+				answer = new RegisterMessageAnswer(RegisterMessageAnswer.ACCEPTED).toXML();
+			} catch (ParserConfigurationException | TransformerException e) {
+				if (DEBUG) 
+            		System.out.println("ops... should not be here :("); 
+			}
+    	}
+    	
+		outgoingRequests.add(new DatagramPacket(answer.getBytes(), answer.getBytes().length, dp.getAddress(), dp.getPort()));
+		//TODO forse da lasciare??
+		if (outgoingRequests.size() == 1)
+			handleOutgoingPackets.notify();
+	}
+
+    @Override
+    protected void finalize() throws Throwable {
+    	handleRequests.stopHandleMessages();
+    	handleOutgoingPackets.stopHandleMessages();
+    	handleIncomingPackets.stopHandleMessages();
+    	
+    	inSocket.close();
+    	outSocket.close();
+        super.finalize();
+    }
+
+}
 
