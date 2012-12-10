@@ -4,14 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.EmptyStackException;
-import java.util.Stack;
-import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -259,7 +253,7 @@ public class UdpServer extends BaseServer {
     		s.getUser().setLatitude(userOfMessage.getLatitude());
     		s.getUser().setLongitude(userOfMessage.getLongitude());
     		s.getUser().setIP(address.toString());
-    		s.getUser().setPort(String.valueOf(port));
+    		s.getUser().setPort(port);
     		
     		
     		try {

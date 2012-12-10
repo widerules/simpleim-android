@@ -8,7 +8,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Vector;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -17,13 +16,17 @@ import serversimpleim.datatypes.SimpleIMUser;
 
 import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
-import com.tolmms.simpleim.datatypes.LoginMessageAnswer;
 import com.tolmms.simpleim.datatypes.Procedures;
 import com.tolmms.simpleim.datatypes.RegisterMessage;
 import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
+/**
+ * No logner supported
+ * @author Artur
+ *
+ */
 public class TcpServer extends BaseServer {
 	
 	// listener
