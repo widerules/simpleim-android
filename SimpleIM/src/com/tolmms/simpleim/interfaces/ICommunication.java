@@ -1,6 +1,7 @@
 package com.tolmms.simpleim.interfaces;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.communication.CommunicationException;
@@ -22,4 +23,6 @@ public interface ICommunication {
 			throws CannotSendBecauseOfWrongUserInfo;
 	
 	public boolean logout();
+	
+	public void announceIAmOnline(UserInfo me, List<UserInfo> userList);
 }

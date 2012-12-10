@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -78,7 +79,7 @@ public class Communication implements ICommunication {
 		
 //		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
 		
-		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), String.valueOf(serviceUdpPort));
+		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
 		loginMessage = new LoginMessage(tempInfo, password);
 		
 		try {
@@ -185,10 +186,41 @@ public class Communication implements ICommunication {
 		return tempInfo;
 	}
 	
-//	private void announceIAmOnline(Vector<UserInfo> userList) {
-//		// TODO Auto-generated method stub
-//		
-//	}
+	public void announceIAmOnline(UserInfo me, List<UserInfo> userList) {
+		SomeOneLoginMessage msg = new SomeOneLoginMessage(me);
+		String msgString;
+		
+		try {
+			msgString = msg.toXML();
+		} catch (ParserConfigurationException e1) {
+			//should never come here
+			return;
+		} catch (TransformerException e1) {
+			//should never come here
+			return;
+		}
+		
+		for (UserInfo userInfo : userList) {
+			if (!userInfo.isOnline())
+				continue;
+			
+			InetAddress address;
+			int port;
+			
+			try {
+				address = InetAddress.getByName(userInfo.getIp());
+				port = Integer.valueOf(userInfo.getPort());
+			} catch (UnknownHostException e) {
+				continue;
+			} catch (NumberFormatException e) {
+				continue;
+			}
+			
+			outgoingPackets.add(new DatagramPacket(msgString.getBytes(), 
+													msgString.getBytes().length,
+													address, port));
+		}		
+	}
 	
 	//TODO - devo assicurarmi che con chi comunico sia veramente il server... lol
 	@Override
@@ -213,7 +245,7 @@ public class Communication implements ICommunication {
 		// TODO da mettere al posto di s.connect(,) mettere quella con un solo paramentro...
 //		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
 		
-		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), String.valueOf(serviceUdpPort));
+		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
 		registerMessage = new RegisterMessage(tempInfo, password);
 		
 		try {

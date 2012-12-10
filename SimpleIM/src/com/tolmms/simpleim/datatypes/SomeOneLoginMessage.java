@@ -47,10 +47,27 @@ public class SomeOneLoginMessage {
 		if (rootEl == null || !rootEl.getNodeName().equals(MessageXMLTags.MESSAGE_TAG))
 			throw new XmlMessageReprException("root element is null or not an " + MessageXMLTags.MESSAGE_TAG + " message");
 
+		
+		int port;
+		
+		try {
+			port = Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG)));
+		} catch (NumberFormatException e) {
+			throw new XmlMessageReprException("the port is not a number");
+		}
+		
+		String status = Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG));
+		
+		if (!UserInfo.OFFLINE_STATUS.equals(status) && UserInfo.ONLINE_STATUS.equals(status))
+			throw new XmlMessageReprException("the status is not in allowed status");
+		
+		if (port <= 0 || port > 65535)
+			throw new XmlMessageReprException("the port is not between 0 and 65535");
+		
 		UserInfo thisUserInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.USERNAME_TAG)), 
 											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.IP_TAG)),
-											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG)),
-											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
+											 port,
+											 status);
 		return new SomeOneLoginMessage(thisUserInfo);
 	}
 
@@ -66,7 +83,7 @@ public class SomeOneLoginMessage {
 		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
 		e_ip.setTextContent(user.ip);
 		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		e_port.setTextContent(user.port);
+		e_port.setTextContent(String.valueOf(user.port));
 		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
 		e_status.setTextContent(user.status);
 		

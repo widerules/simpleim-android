@@ -6,7 +6,7 @@ public class UserInfo {
 	
 	protected String username;
 	protected String ip;
-	protected String port;
+	protected int port;
 	
 	protected double latitude;
 	protected double longitude;
@@ -14,7 +14,7 @@ public class UserInfo {
 	
 	protected String status;
 
-	public UserInfo(String username, String ip, String port) {
+	public UserInfo(String username, String ip, int port) {
 		this.username = username;
 		this.ip = ip;
 		this.port = port;
@@ -22,7 +22,7 @@ public class UserInfo {
 		//TODO da mettere nel costruttore il status ???
 	}
 	
-	public UserInfo(String username, String ip, String port, String status) {
+	public UserInfo(String username, String ip, int port, String status) {
 		this(username, ip, port);
 		this.status = status;
 	}
@@ -83,7 +83,7 @@ public class UserInfo {
 		return status;
 	}
 
-	public void set(String username, String ip, String port) {
+	public void set(String username, String ip, int port) {
 		this.username = username;
 		this.ip = ip;
 		this.port = port;
@@ -92,7 +92,7 @@ public class UserInfo {
 	public void clearInfos() {
 		this.username = "";
 		this.ip = "";
-		this.port = "";
+		this.port = 0;
 		setOffline();
 	}
 
@@ -100,8 +100,12 @@ public class UserInfo {
 		return ip;
 	}
 
-	public String getPort() {
+	public int getPort() {
 		return port;
+	}
+	
+	public String getPortString() {
+		return String.valueOf(port);
 	}
 
 	public double getLatitude() {
@@ -133,7 +137,7 @@ public class UserInfo {
 		this.ip = ip;
 	}
 
-	public void setPort(String port) {
+	public void setPort(int port) {
 		this.port = port;
 	}
 

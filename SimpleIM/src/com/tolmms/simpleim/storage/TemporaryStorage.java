@@ -21,7 +21,7 @@ public class TemporaryStorage {
 	/**
 	 * Contains My Info
 	 */
-	public static UserInfo myInfo = new UserInfo(null, null, null);
+	public static UserInfo myInfo = new UserInfo(null, null, 0);
 	
 	
 	
@@ -80,7 +80,7 @@ public class TemporaryStorage {
 	public static UserInfo getUserInfoByUsername(String username_to_chat) {
 		UserInfo toRet = null;
 		try {
-			toRet = user_list.get(user_list.indexOf(new UserInfo(username_to_chat, null, null)));
+			toRet = user_list.get(user_list.indexOf(new UserInfo(username_to_chat, null, 0)));
 		} catch (ArrayIndexOutOfBoundsException e) { }
 		
 		return toRet;

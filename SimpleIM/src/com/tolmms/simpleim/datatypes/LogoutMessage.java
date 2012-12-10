@@ -51,7 +51,7 @@ public class LogoutMessage {
 
 		UserInfo thisUserInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.USERNAME_TAG)), 
 											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.IP_TAG)),
-											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG)),
+											 Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG))),
 											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
 		return new LogoutMessage(thisUserInfo);
 	}
@@ -68,7 +68,7 @@ public class LogoutMessage {
 		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
 		e_ip.setTextContent(user.ip);
 		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		e_port.setTextContent(user.port);
+		e_port.setTextContent(String.valueOf(user.port));
 		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
 		e_status.setTextContent(user.status);
 		
