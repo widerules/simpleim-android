@@ -8,8 +8,19 @@ import java.util.Vector;
 import com.tolmms.simpleim.datatypes.UserInfo;
 
 public class TemporaryStorage {
+	/**
+	 * The collection of all users that app knows about
+	 */
 	public static Vector<UserInfo> user_list = new Vector<UserInfo>();
+	
+	/**
+	 * Per each user in user_list contains the cllection of all messages of that user.
+	 */
 	public static HashMap<UserInfo, Vector<String>> messages = new HashMap<UserInfo, Vector<String>>();
+	
+	/**
+	 * Contains My Info
+	 */
 	public static UserInfo myInfo = new UserInfo(null, null, null);
 	
 	
@@ -44,7 +55,10 @@ public class TemporaryStorage {
 	
 	
 	
-	
+	/**
+	 * Reorders the list of all users.
+	 * First come the online users and then the others (in alphabetical order!)
+	 */
 	public static void reorderUserList() {
 		Collections.sort(user_list, new Comparator<UserInfo>() {
 			@Override
@@ -58,11 +72,29 @@ public class TemporaryStorage {
 		});
 	}
 
+	/**
+	 * returns the UserInfo of username_to_chat
+	 * @param username_to_chat
+	 * @return the UserInfo or a null if the user_to_chat is not in user_list
+	 */
 	public static UserInfo getUserInfoByUsername(String username_to_chat) {
-		return user_list.get(user_list.indexOf(new UserInfo(username_to_chat, null, null)));
+		UserInfo toRet = null;
+		try {
+			toRet = user_list.get(user_list.indexOf(new UserInfo(username_to_chat, null, null)));
+		} catch (ArrayIndexOutOfBoundsException e) { }
+		
+		return toRet;
 	}
 	
+	/**
+	 * returns the messages of the user_to_chat
+	 * @param user_to_chat
+	 * @return the vector containing the user_to_chat messages or a null ref if user_to_chat is not in user_list
+	 */
 	public static Vector<String> getMessagesByUser(UserInfo user_to_chat) {
+		if (!user_list.contains(user_to_chat))
+			return null;
+		
 		Vector<String> ms;
 		
 		ms = messages.get(user_to_chat);
@@ -75,18 +107,33 @@ public class TemporaryStorage {
 		return ms;
 	}
 	
+	/**
+	 * 
+	 * @param username
+	 * @return the messages of user having username = username or null if a user with username does not exists in user_list
+	 */
 	public static Vector<String> getMessagesByUsername(String username) {
 		return getMessagesByUser(getUserInfoByUsername(username));
 	}
 	
 	
 	
-	public static void addMessage(UserInfo user_to_chat, String msg) {
+	/**
+	 * adds a message in user_to_chat message history
+	 * @param user_to_chat
+	 * @param msg
+	 * @return true if message is added successfully or false  if the user_to_chat is not in user_list (the msg is not added!)
+	 */
+	public static boolean addMessage(UserInfo user_to_chat, String msg) {
+		if (!user_list.contains(user_to_chat))
+			return false;
 		Vector<String> ms = getMessagesByUser(user_to_chat);
 		
 		ms.add(msg);
 		
 		//TODO bisogna limitare la capacita della storia dei msg
+		
+		return true;
 	}
 	
 	
