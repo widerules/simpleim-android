@@ -7,6 +7,8 @@ import java.net.InetAddress;
 import java.util.EmptyStackException;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,16 +36,12 @@ public class UdpServer extends BaseServer {
     DatagramSocket inSocket = null;
     DatagramSocket outSocket = null;
     
-    Vector<DatagramPacket> incomingRequests = null;
-    Vector<DatagramPacket> outgoingRequests = null;
+    BlockingQueue<DatagramPacket> incomingRequests = null;
+    BlockingQueue<DatagramPacket> outgoingRequests = null;
 
     HandleIncomingPackets handleIncomingPackets = null;
     HandleRequests handleRequests = null;
     HandleOutgoingPackets handleOutgoingPackets = null;
-    
-    final Lock lock = new ReentrantLock();
-    final Condition incomingPacketsLock  = lock.newCondition(); 
-    final Condition outgoingPacketsLock = lock.newCondition(); 
 
 
 
@@ -57,8 +55,8 @@ public class UdpServer extends BaseServer {
         inSocket = new DatagramSocket(port);
         outSocket = new DatagramSocket();
         
-        incomingRequests = new Vector<>();
-        outgoingRequests = new Vector<>();
+        incomingRequests = new LinkedBlockingQueue<>();
+        outgoingRequests = new LinkedBlockingQueue<>();
     }
 
     public void run() {	    	  
@@ -67,8 +65,8 @@ public class UdpServer extends BaseServer {
         handleOutgoingPackets = new HandleOutgoingPackets();
         
 
-//        handleIncomingPackets.start();
-//        handleRequests.start();
+        handleIncomingPackets.start();
+        handleRequests.start();
         handleOutgoingPackets.start();
         
     }
@@ -94,15 +92,12 @@ public class UdpServer extends BaseServer {
 				}
 
 				incomingRequests.add(packet);
-
-				if (incomingRequests.size() == 1)
-					handleRequests.notify();
 			}
 		}
 		
 		public void stopHandleMessages() {
 			canRun = false;
-			notify();
+//			notify();
 		}
 	}
 	    
@@ -113,15 +108,13 @@ public class UdpServer extends BaseServer {
 		public void run() {
 			while (canRun) {
 				DatagramPacket dp = null;
-				if (outgoingRequests.isEmpty())
-					try {
-						outgoingRequests.wait();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
-				dp = outgoingRequests.remove(0);
+				
+				try {
+					dp = outgoingRequests.take();
+				} catch (InterruptedException e1) { }
+				
+				if (dp == null)
+					continue;
 
 				try {
 					outSocket.send(dp);
@@ -134,7 +127,7 @@ public class UdpServer extends BaseServer {
 
 		public void stopHandleMessages() {
 			canRun = false;
-			notify();
+//			notify();
 		}
 
 	}
@@ -146,15 +139,13 @@ public class UdpServer extends BaseServer {
 		public void run() {
 			while (canRun) {
 				DatagramPacket dp = null;
-				if (incomingRequests.isEmpty())
-					try {
-						wait();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
-				dp = incomingRequests.remove(0);
+				
+				try {
+					dp = incomingRequests.take();
+				} catch (InterruptedException e1) { }
+				
+				if (dp == null)
+					continue;
 
 				String the_msg = new String(dp.getData(), 0, dp.getLength());
 				the_msg = the_msg.trim();
@@ -211,7 +202,7 @@ public class UdpServer extends BaseServer {
 
 		public void stopHandleMessages() {
 			canRun = false;
-			notify();
+//			interrupt();
 		}
 	}
 
@@ -257,9 +248,6 @@ public class UdpServer extends BaseServer {
     		port = packet.getPort();
 
     		outgoingRequests.add(new DatagramPacket(answer.getBytes(), answer.getBytes().length, address, port));
-    		//TODO forse da lasciare??
-    		if (outgoingRequests.size() == 1)
-				handleOutgoingPackets.notify();
     	} else {
     		if (DEBUG) 
         		System.out.println("Sending ACCEPT login to \"" + userOfMessage.getUsername() +"\"");
@@ -282,9 +270,6 @@ public class UdpServer extends BaseServer {
 			}
     		
     		outgoingRequests.add(new DatagramPacket(answer.getBytes(), answer.getBytes().length, address, port));
-    		//TODO forse da lasciare??
-    		if (outgoingRequests.size() == 1)
-				handleOutgoingPackets.notify();
 				
     		ListMessage listMessage = new ListMessage();
     		fillListMessage(listMessage, s);
@@ -294,9 +279,7 @@ public class UdpServer extends BaseServer {
 			} catch (ParserConfigurationException | TransformerException e) { }
     		
     		outgoingRequests.add(new DatagramPacket(answer.getBytes(),  answer.getBytes().length, address, port));
-    		//TODO forse da lasciare??
-    		if (outgoingRequests.size() == 1)
-				handleOutgoingPackets.notify();     		
+    		
         	s.getUser().setOnline();
     	}
     }
@@ -343,9 +326,6 @@ public class UdpServer extends BaseServer {
     	}
     	
 		outgoingRequests.add(new DatagramPacket(answer.getBytes(), answer.getBytes().length, dp.getAddress(), dp.getPort()));
-		//TODO forse da lasciare??
-		if (outgoingRequests.size() == 1)
-			handleOutgoingPackets.notify();
 	}
 
     @Override
