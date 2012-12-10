@@ -11,6 +11,9 @@
     <string name="it_error_no_network">Non si è connessi ad internet</string>
     
     <string name="it_error_check_username_or_password">Login non riuscito.\nControllare il login e la password.</string>
+    <string name="it_error_user_already_logged_in">Già loggato nel sistema!</string>
+    <string name="it_error_not_enough_resources">Risorse insufficienti per il programma, riprovare.</string>
+    
     
     
     

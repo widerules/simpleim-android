@@ -3,6 +3,7 @@ package com.tolmms.simpleim;
 import java.net.UnknownHostException;
 
 import com.tolmms.simpleim.communication.CommunicationException;
+import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 import com.tolmms.simpleim.interfaces.IAppManager;
@@ -237,6 +238,10 @@ public class RegisterActivity extends Activity {
 								errorMsg = getString(R.string.it_error_communication_error);
 								if (MainActivity.DEBUG)
 									errorMsg += ": " + e.getMessage();
+							} catch (UserIsAlreadyLoggedInException e) {
+								errorMsg = getString(R.string.it_error_user_already_logged_in);
+								if (MainActivity.DEBUG)
+									errorMsg += ": " + e.getMessage();
 							}
 							
 							if (errorMsg.equals("")) {
@@ -251,7 +256,7 @@ public class RegisterActivity extends Activity {
 												@Override
 												public void onClick(DialogInterface dialog, int which) {
 //													showProgress(false);
-													startActivity(new Intent(RegisterActivity.this, LoggedUser.class));
+													startActivity(new Intent(RegisterActivity.this, MainActivity.class));
 													RegisterActivity.this.finish();
 													dialog.cancel(); // or dismiss?	
 												}
