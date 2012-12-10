@@ -70,7 +70,7 @@ public class LoginMessageAnswer {
 		
 		UserInfo thisUserInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.USERNAME_TAG)), 
 				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.IP_TAG)),
-				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG)),
+				 Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG))),
 				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
 		
 		return new LoginMessageAnswer(thisUserInfo, e.getTextContent());
@@ -93,7 +93,7 @@ public class LoginMessageAnswer {
 		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
 		e_ip.setTextContent(u.ip);
 		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		e_port.setTextContent(u.port);
+		e_port.setTextContent(String.valueOf(u.port));
 		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
 		e_status.setTextContent(u.status);
 		

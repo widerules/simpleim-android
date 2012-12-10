@@ -89,7 +89,7 @@ public class ListMessage {
 			
 			currentUser = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.USERNAME_TAG)),
 									   Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.IP_TAG)), 
-									   Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.PORT_TAG)),
+									   Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.PORT_TAG))),
 									   Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
 			
 			toRet.addUser(currentUser);
@@ -112,7 +112,7 @@ public class ListMessage {
 			Element u_ip = doc.createElement(MessageXMLTags.IP_TAG);
 			u_ip.setTextContent(u.ip);
 			Element u_port = doc.createElement(MessageXMLTags.PORT_TAG);
-			u_port.setTextContent(u.port);
+			u_port.setTextContent(String.valueOf(u.port));
 			Element u_status = doc.createElement(MessageXMLTags.STATUS_TAG);
 			u_status.setTextContent(u.status);
 			

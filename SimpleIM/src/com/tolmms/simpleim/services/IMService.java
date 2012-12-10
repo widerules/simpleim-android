@@ -110,12 +110,12 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 //			Vector<UserInfo> user_list = new Vector<UserInfo>();
 			
 			
-			user_list.add(new UserInfo("prova1", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS));
-			user_list.add(new UserInfo("arova1", "10.2.1.1", "2000", UserInfo.ONLINE_STATUS));
-			user_list.add(new UserInfo("prova2", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS));
-			user_list.add(new UserInfo("aarova1", "10.2.1.1", "2000", UserInfo.ONLINE_STATUS));
-			user_list.add(new UserInfo("aaaaarova1", "10.2.1.1", "2000", UserInfo.ONLINE_STATUS));
-			user_list.add(new UserInfo("aaaaaaaaarova1", "10.2.1.1", "2000", UserInfo.OFFLINE_STATUS));
+			user_list.add(new UserInfo("prova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
+			user_list.add(new UserInfo("arova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
+			user_list.add(new UserInfo("prova2", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
+			user_list.add(new UserInfo("aarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
+			user_list.add(new UserInfo("aaaaarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
+			user_list.add(new UserInfo("aaaaaaaaarova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
 		
 			
 			TemporaryStorage.reorderUserList();
@@ -127,7 +127,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			
 			
 			// da mettere solo quando si fa il login
-			UserInfo myInfo = new UserInfo("artur", "10101", "10");
+			UserInfo myInfo = new UserInfo("artur", "10101", 10);
 			TemporaryStorage.myInfo.setOnline();
 			TemporaryStorage.myInfo.set(myInfo.getUsername(), myInfo.getIp(), myInfo.getPort());
 //			TemporaryStorage.user_list = user_list;
@@ -253,6 +253,9 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		
 		lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener);
 		isLogged = true;
+		
+		
+		communication.announceIAmOnline(TemporaryStorage.myInfo, TemporaryStorage.user_list);
 		
 		return;
 	}
