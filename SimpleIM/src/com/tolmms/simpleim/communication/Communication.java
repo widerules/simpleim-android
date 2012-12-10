@@ -26,7 +26,6 @@ import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.SomeOneLoginMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
-import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 import com.tolmms.simpleim.interfaces.IAppManagerForComm;

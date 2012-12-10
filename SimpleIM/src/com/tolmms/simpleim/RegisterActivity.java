@@ -2,18 +2,6 @@ package com.tolmms.simpleim;
 
 import java.net.UnknownHostException;
 
-import com.tolmms.simpleim.communication.CommunicationException;
-import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
-import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
-import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
-import com.tolmms.simpleim.interfaces.IAppManager;
-import com.tolmms.simpleim.services.IMService;
-import com.tolmms.simpleim.tools.Tools;
-
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
@@ -24,6 +12,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -32,6 +24,13 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.tolmms.simpleim.communication.CommunicationException;
+import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
+import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
+import com.tolmms.simpleim.interfaces.IAppManager;
+import com.tolmms.simpleim.services.IMService;
+import com.tolmms.simpleim.tools.Tools;
 
 public class RegisterActivity extends Activity {
 	
