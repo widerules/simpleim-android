@@ -26,7 +26,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
+import com.tolmms.simpleim.exceptions.UserToChatWithIsNotRecognizedException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;
 import com.tolmms.simpleim.storage.TemporaryStorage;
@@ -242,7 +245,18 @@ public class ChatActivity extends Activity {
 					return;
 				}
 				
-				iMService.sendMessage(username_to_chat, the_message);
+				try {
+					iMService.sendMessage(username_to_chat, the_message);
+				} catch (UserNotLoggedInException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (UserToChatWithIsNotRecognizedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (CannotSendBecauseOfWrongUserInfo e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				tv_send_msg.setText("");
 			}
 		});

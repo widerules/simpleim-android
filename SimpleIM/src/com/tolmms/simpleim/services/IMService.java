@@ -3,8 +3,6 @@ package com.tolmms.simpleim.services;
 import java.net.UnknownHostException;
 import java.util.Vector;
 
-import org.osmdroid.util.GeoPoint;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -22,15 +20,19 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.tolmms.simpleim.ChatActivity;
-import com.tolmms.simpleim.LoggedUser;
 import com.tolmms.simpleim.MainActivity;
 import com.tolmms.simpleim.R;
+import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.communication.Communication;
 import com.tolmms.simpleim.communication.CommunicationException;
+import com.tolmms.simpleim.communication.UnableToStartSockets;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.exceptions.NotEnoughResourcesException;
+import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
+import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
+import com.tolmms.simpleim.exceptions.UserToChatWithIsNotRecognizedException;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 import com.tolmms.simpleim.interfaces.IAppManager;
@@ -42,49 +44,49 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	private final IBinder iMBinder = new IMBinder();
 	
 	private NotificationManager notifManager = null;
+	private ConnectivityManager conManager = null;
+	
+	private LocationManager lm = null;
+	private LocationListener myLoclistener = null;
+	
+	private ICommunication communication = null;
+	
+	private Intent messageReceivedSent = null;
+	private Intent userStateChange = null;	
+	
+	private String currentUserChat = "";
+//	private boolean viewingMap = false;
 	
 	private boolean isLogged = false;
 	
-	
-	private ICommunication communication = null;
 
-	private ConnectivityManager conManager;
-	
-	private UserInfo myInfo;
-	
-	private String currentUserChat = "";
-	
-	private boolean viewingMap = false;
-	
-	Intent messageReceivedSent;
-	Intent userStateChange;
-	
-//	private UserInfo myInfo;
-	
-	
-	
+	/* 
+	 * *************************************************************************
+	 * Stuff for service
+	 * *************************************************************************
+	 */
 	public class IMBinder extends Binder {
 		public IAppManager getService() {
 			return IMService.this;
 		}
 	}
-	
+
 	@Override
 	public IBinder onBind(Intent i) {
 		return iMBinder;
 	}
+
+	/*
+	 * *************************************************************************
+	 * *************************************************************************
+	 */
 	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 	}
 	
-	
-	
-	LocationManager lm;
-	
-	LocationListener myLoclistener;
-	
+		
 	@Override
 	public void onCreate() {
 		notifManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
@@ -97,36 +99,9 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		TemporaryStorage.user_list.clear();
 		TemporaryStorage.messages.clear();
 		
-		
 		lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		myLoclistener =  new MyLocListener();
 		
-		
-		myLoclistener = new LocationListener() {
-			@Override
-			public void onStatusChanged(String provider, int status, Bundle extras) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onProviderEnabled(String provider) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onProviderDisabled(String provider) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onLocationChanged(Location location) {
-				TemporaryStorage.myInfo.setLatitude(location.getLatitude());
-				TemporaryStorage.myInfo.setLongitude(location.getLongitude());
-				TemporaryStorage.myInfo.setAltitude(location.getAltitude());
-			}
-		};
 		
 		
 		
@@ -152,19 +127,55 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			
 			
 			// da mettere solo quando si fa il login
-			myInfo = new UserInfo("artur", "10101", "10");
+			UserInfo myInfo = new UserInfo("artur", "10101", "10");
 			TemporaryStorage.myInfo.setOnline();
 			TemporaryStorage.myInfo.set(myInfo.getUsername(), myInfo.getIp(), myInfo.getPort());
 //			TemporaryStorage.user_list = user_list;
 			
-			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener);
+//			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener);
 		}
 		
 		
 				
 	}
 	
+	/* 
+	 * *************************************************************************
+	 * Private methods and classes
+	 * *************************************************************************
+	 */
 	
+	/*
+	 * class that defines what actions to do when my location is changed
+	 */
+	private class MyLocListener implements LocationListener {
+		@Override
+		public void onStatusChanged(String provider, int status, Bundle extras) {
+			// TODO Auto-generated method stub
+
+		}
+		@Override
+		public void onProviderEnabled(String provider) {
+			// TODO Auto-generated method stub
+
+		}
+		@Override
+		public void onProviderDisabled(String provider) {
+			// TODO Auto-generated method stub
+
+		}
+		@Override
+		public void onLocationChanged(Location location) {
+			TemporaryStorage.myInfo.setLatitude(location.getLatitude());
+			TemporaryStorage.myInfo.setLongitude(location.getLongitude());
+			TemporaryStorage.myInfo.setAltitude(location.getAltitude());
+		}
+	};
+	
+	
+	/*
+	 * shows tray notification when needed
+	 */
 	private void showNotificationIfNeeded(String username_to_chat) {
 
 		Intent notifyOpensChatIntent = null;
@@ -190,56 +201,118 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 				setAutoCancel(true).
 				build();
 		
-//		if (!currentUserChat.equals(username_to_chat))
+		//TODO forse da rimuovere il coso di debug
+		if (MainActivity.DEBUG)
 			notifManager.notify(username_to_chat.hashCode(), n);
-	}
-
-	@Override
-	public void loginUser(String username, String password) throws UsernameOrPasswordException, UnknownHostException, CommunicationException {
-		if (isLogged)
-			return;
-		
-		myInfo = communication.login(username, password);
-		
-		if (myInfo == null)
-			isLogged = false;
-		else  {
-			isLogged = true;
-			
-			TemporaryStorage.myInfo.setOnline();
-			TemporaryStorage.myInfo.set(myInfo.getUsername(), myInfo.getIp(), myInfo.getPort());
-			
-			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener);
-			
+		else {
+			if (!currentUserChat.equals(username_to_chat))
+				notifManager.notify(username_to_chat.hashCode(), n);
 		}
+	}
+	
+	/*
+	 * send an intent do ChatActivity to tell that there is a new message for current
+	 * user - the ChatActivity should update the view of messages!
+	 */
+	private void notifyNewMessageToChatActivity(String username_to_chat) {
+		if (currentUserChat.equals(username_to_chat)) {
+			messageReceivedSent.putExtra(INTENT_ACTION_MESSAGES_RECEIVED_SENT_USERNAME_EXTRA, username_to_chat);
+			LocalBroadcastManager.getInstance(this).sendBroadcast(messageReceivedSent);
+		}
+	}
+	
+
+	/* 
+	 * *************************************************************************
+	 * IAppManager
+	 * *************************************************************************
+	 */
+	@Override
+	public void loginUser(String username, String password) 
+			throws UsernameOrPasswordException, 
+					UnknownHostException, 
+					CommunicationException, 
+					UserIsAlreadyLoggedInException, 
+					NotEnoughResourcesException {
+		
+		if (isLogged)
+			throw new UserIsAlreadyLoggedInException();
+		
+		UserInfo myInfo = null;
+		
+		try {
+			myInfo = communication.login(username, password);
+		} catch (UnableToStartSockets e) {
+			throw new NotEnoughResourcesException(e.getMessage());
+		}	
+		
+		//TODO assicurarmi che la risposta di myInfo sia effettivamente mia
+		// 		cioè che myInfo.username == username
+		TemporaryStorage.myInfo.setOnline();
+		TemporaryStorage.myInfo.set(username, myInfo.getIp(), myInfo.getPort());
+		
+		lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener);
+		isLogged = true;
 		
 		return;
 	}
-
+	
 	@Override
-	public void registerUser(String username, String password) throws CommunicationException, UsernameAlreadyExistsException, UnknownHostException {
-		communication.register(username, password);
-	}
-
-	@Override
-	public void exit() {		
-		isLogged = false;
-		myInfo = null;
+	public void exit() {
 		communication.logout();
-		TemporaryStorage.myInfo.clearInfos();
 		
-		TemporaryStorage.user_list.clear();
-		TemporaryStorage.messages.clear();
+		isLogged = false;
 		
 		lm.removeUpdates(myLoclistener);
+		TemporaryStorage.myInfo.clearInfos();
+		TemporaryStorage.user_list.clear();
+		TemporaryStorage.messages.clear();
 	}
+	
+	@Override
+	public void registerUser(String username, String password) 
+			throws CommunicationException, 
+				UsernameAlreadyExistsException, 
+				UnknownHostException, 
+				UserIsAlreadyLoggedInException {
+		
+		if (isLogged)
+			throw new UserIsAlreadyLoggedInException();
+		
+		communication.register(username, password);
+	}
+	
+	@Override
+	public void sendMessage(String username_to_chat, String the_message) 
+			throws UserNotLoggedInException, 
+				UserToChatWithIsNotRecognizedException, 
+				CannotSendBecauseOfWrongUserInfo {
+		UserInfo user_to_chat;
+		
+		if (!isLogged)
+			throw new UserNotLoggedInException();
+		
+		if ((user_to_chat = TemporaryStorage.getUserInfoByUsername(username_to_chat)) == null)
+			throw new UserToChatWithIsNotRecognizedException();
+		
+		
+		communication.sendMessage(TemporaryStorage.myInfo, user_to_chat, the_message);
 
+		
+		// add the message to storage and notify chat activity if needed
+		TemporaryStorage.addMessage(user_to_chat, getString(R.string.it_chat_self_name) + ": " + the_message);
+		notifyNewMessageToChatActivity(username_to_chat);
+		
+		if (MainActivity.DEBUG)
+			showNotificationIfNeeded(username_to_chat);
+		
+	}
+	
 	@Override
 	public boolean isUserLoggedIn() {
 		return isLogged;
-		// return TemporaryStorage.myInfo.status.equals(offline)
 	}
-
+	
 	@Override
 	public boolean isNetworkConnected() {
 		NetworkInfo netInfo = conManager.getActiveNetworkInfo();
@@ -247,7 +320,42 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			return false;
 		return true;
 	}
+	
+	
+	@Override
+	public void unsetCurrentUserChat() {
+		currentUserChat = "";		
+	}
 
+	@Override
+	public void setCurrentUserChat(String username_to_chat) {
+		currentUserChat = username_to_chat;
+		
+	}
+
+	@Override
+	public void viewingMap(boolean b) {
+		//TODO serve???
+//		viewingMap = b;		
+	}
+
+	@Override
+	public void sendMessageToAll(String msg) {
+		// TODO iniare un messaggio a tutti
+		
+	}
+	
+	/*
+	 * *************************************************************************
+	 * *************************************************************************
+	 */
+	
+	
+	/* 
+	 * *************************************************************************
+	 * IAppManagerForComm
+	 * *************************************************************************
+	 */
 	public void setUserList(Vector<UserInfo> userList) {
 		for (UserInfo userInfo : userList) {
 			if (TemporaryStorage.user_list.contains(userInfo))
@@ -311,54 +419,10 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		
 		// maybe a notification user logged in
 	}
-
-	@Override
-	public void sendMessage(String username_to_chat, String the_message) {
-		UserInfo user_to_chat;
-		
-		if ((user_to_chat = TemporaryStorage.getUserInfoByUsername(username_to_chat)) == null)
-			return; // should not happen
-		
-		communication.sendMessage(myInfo, user_to_chat, the_message);
-		
-		// add the message to storage and notify chat activity if needed
-		TemporaryStorage.addMessage(user_to_chat, getString(R.string.it_chat_self_name) + ": " + the_message);
-		notifyNewMessageToChatActivity(username_to_chat);
-		
-		if (MainActivity.DEBUG)
-			showNotificationIfNeeded(username_to_chat);
-		
-	}
-	
-	private void notifyNewMessageToChatActivity(String username_to_chat) {
-		if (currentUserChat.equals(username_to_chat)) {
-			messageReceivedSent.putExtra(INTENT_ACTION_MESSAGES_RECEIVED_SENT_USERNAME_EXTRA, username_to_chat);
-			LocalBroadcastManager.getInstance(this).sendBroadcast(messageReceivedSent);
-		}
-	}
-
-	@Override
-	public void unsetCurrentUserChat() {
-		currentUserChat = "";		
-	}
-
-	@Override
-	public void setCurrentUserChat(String username_to_chat) {
-		currentUserChat = username_to_chat;
-		
-	}
-
-	@Override
-	public void viewingMap(boolean b) {
-		viewingMap = b;		
-	}
-
-	@Override
-	public void sendMessageToAll(String msg) {
-		// TODO Auto-generated method stub
-		
-	}
-	
+	/*
+	 * *************************************************************************
+	 * *************************************************************************
+	 */
 	
 	
 }

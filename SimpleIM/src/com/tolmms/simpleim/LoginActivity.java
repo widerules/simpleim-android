@@ -25,6 +25,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tolmms.simpleim.communication.CommunicationException;
+import com.tolmms.simpleim.exceptions.NotEnoughResourcesException;
+import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;
@@ -233,6 +235,14 @@ public class LoginActivity extends Activity {
 								errorMsg += ": " + e.getMessage();
 						} catch (CommunicationException e) {
 							errorMsg = getString(R.string.it_error_communication_error);
+							if (MainActivity.DEBUG)
+								errorMsg += ": " + e.getMessage();
+						} catch (UserIsAlreadyLoggedInException e) {
+							errorMsg = getString(R.string.it_error_user_already_logged_in);
+							if (MainActivity.DEBUG)
+								errorMsg += ": " + e.getMessage();
+						} catch (NotEnoughResourcesException e) {
+							errorMsg = getString(R.string.it_error_not_enough_resources);
 							if (MainActivity.DEBUG)
 								errorMsg += ": " + e.getMessage();
 						}
