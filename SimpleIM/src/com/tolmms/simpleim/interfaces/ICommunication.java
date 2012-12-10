@@ -6,7 +6,6 @@ import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.communication.CommunicationException;
 import com.tolmms.simpleim.communication.UnableToStartSockets;
 import com.tolmms.simpleim.datatypes.UserInfo;
-import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 

@@ -5,8 +5,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 
-import android.util.Pair;
-
 import com.tolmms.simpleim.datatypes.UserInfo;
 
 public class TemporaryStorage {
