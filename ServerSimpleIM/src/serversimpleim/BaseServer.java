@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 
 import serversimpleim.datatypes.SimpleIMUser;
 
@@ -21,15 +22,20 @@ public class BaseServer {
     }
     
     private void registerDebugUsers() {
-  		registeredUsers.add(new SimpleIMUser(
-  				new UserInfo("prova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS), 
-  				"prova1"));
-  		registeredUsers.add(new SimpleIMUser(
-  				new UserInfo("prova2", "10.2.1.2", 2000, UserInfo.OFFLINE_STATUS), 
-  				"prova2"));
-  		registeredUsers.add(new SimpleIMUser(
-  				new UserInfo("prova3", "10.2.1.3", 2000, UserInfo.OFFLINE_STATUS), 
-  				"prova3"));
+  		try {
+			registeredUsers.add(new SimpleIMUser(
+					new UserInfo("prova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS), 
+					"prova1"));
+			registeredUsers.add(new SimpleIMUser(
+	  				new UserInfo("prova2", "10.2.1.2", 2000, UserInfo.OFFLINE_STATUS), 
+	  				"prova2"));
+	  		registeredUsers.add(new SimpleIMUser(
+	  				new UserInfo("prova3", "10.2.1.3", 2000, UserInfo.OFFLINE_STATUS), 
+	  				"prova3"));
+		} catch (InvalidDataException e) {
+			/* cannot be here */
+		}
+  		
   		
 
   	}
