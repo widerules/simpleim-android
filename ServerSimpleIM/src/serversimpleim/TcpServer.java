@@ -204,21 +204,21 @@ public class TcpServer extends BaseServer {
             	if (registeredUsers.contains(new SimpleIMUser(rm.getUser(), "DUMMY"))) {
             		if (DEBUG) 
                 		System.out.println("Sending REFUSE register to \"" + rm.getUser().getUsername() +"\"");
-                	
-            		try {
-						answer = new RegisterMessageAnswer(RegisterMessageAnswer.REFUSED).toXML();
-					} catch (ParserConfigurationException | TransformerException e) {
-						// TODO cannot arrive here
-					}               		
+//                	
+//            		try {
+//						answer = new RegisterMessageAnswer(RegisterMessageAnswer.REFUSED).toXML();
+//					} catch (ParserConfigurationException | TransformerException e) {
+//						// TODO cannot arrive here
+//					}               		
             	} else {
             		if (DEBUG) 
                 		System.out.println("Sending ACCEPT register to \"" + rm.getUser().getUsername() +"\"");
                 	
-            		try {
-						answer = new RegisterMessageAnswer(RegisterMessageAnswer.ACCEPTED).toXML();
-					} catch (ParserConfigurationException | TransformerException e) {
-						// TODO cannot arrive here
-					}
+//            		try {
+//						answer = new RegisterMessageAnswer(RegisterMessageAnswer.ACCEPTED).toXML();
+//					} catch (ParserConfigurationException | TransformerException e) {
+//						// TODO cannot arrive here
+//					}
             	}
             	
             	out.println(answer);                	
