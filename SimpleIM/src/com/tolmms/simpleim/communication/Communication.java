@@ -33,7 +33,6 @@ import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 import com.tolmms.simpleim.interfaces.IAppManagerForComm;
 import com.tolmms.simpleim.interfaces.ICommunication;
-import com.tolmms.simpleim.storage.TemporaryStorage;
 
 public class Communication implements ICommunication {
 	HandleIncomingPackets udpListener = null;
@@ -453,7 +452,7 @@ public class Communication implements ICommunication {
 						continue;
 					}
 					
-					service.recievedMessage(cm.getMessage());
+					service.recievedMessage(cm.getMessageInfo());
 					
 				} else if (Procedures.isLogoutMessage(message_type)) {
 					LogoutMessage solm = null;

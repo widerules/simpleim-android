@@ -2,7 +2,6 @@ package com.tolmms.simpleim.datatypes;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Date;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -38,7 +37,7 @@ public class CommunicationMessage {
 		this.mi = mi;
 	}
 	
-	public MessageInfo getMessage() {
+	public MessageInfo getMessageInfo() {
 		return mi;
 	}
 	
