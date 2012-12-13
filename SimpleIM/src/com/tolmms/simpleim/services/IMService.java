@@ -28,7 +28,10 @@ import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.communication.Communication;
 import com.tolmms.simpleim.communication.CommunicationException;
 import com.tolmms.simpleim.communication.UnableToStartSockets;
+import com.tolmms.simpleim.datatypes.MessageInfo;
+import com.tolmms.simpleim.datatypes.MessageRepresentation;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.exceptions.NotEnoughResourcesException;
 import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
@@ -110,13 +113,14 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 //			Vector<UserInfo> user_list = new Vector<UserInfo>();
 			
 			
-			user_list.add(new UserInfo("prova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
-			user_list.add(new UserInfo("arova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
-			user_list.add(new UserInfo("prova2", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
-			user_list.add(new UserInfo("aarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
-			user_list.add(new UserInfo("aaaaarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
-			user_list.add(new UserInfo("aaaaaaaaarova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
-		
+			try {
+				user_list.add(new UserInfo("prova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
+				user_list.add(new UserInfo("arova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
+				user_list.add(new UserInfo("prova2", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
+				user_list.add(new UserInfo("aarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
+				user_list.add(new UserInfo("aaaaarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
+				user_list.add(new UserInfo("aaaaaaaaarova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
+			} catch (InvalidDataException e) { /* cannot be here */ }
 			
 			TemporaryStorage.reorderUserList();
 			
@@ -127,7 +131,12 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			
 			
 			// da mettere solo quando si fa il login
-			UserInfo myInfo = new UserInfo("artur", "10101", 10);
+			UserInfo myInfo = null;
+			
+			try {
+				myInfo = new UserInfo("artur", "10101", 10);
+			} catch (InvalidDataException e) { /* cannot be here */ }
+			
 			TemporaryStorage.myInfo.setOnline();
 			TemporaryStorage.myInfo.set(myInfo.getUsername(), myInfo.getIp(), myInfo.getPort());
 //			TemporaryStorage.user_list = user_list;
@@ -289,7 +298,8 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	public void sendMessage(String username_to_chat, String the_message) 
 			throws UserNotLoggedInException, 
 				UserToChatWithIsNotRecognizedException, 
-				CannotSendBecauseOfWrongUserInfo {
+				CannotSendBecauseOfWrongUserInfo, 
+				InvalidDataException {
 		UserInfo user_to_chat;
 		
 		if (!isLogged)
@@ -299,11 +309,15 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			throw new UserToChatWithIsNotRecognizedException();
 		
 		
-		communication.sendMessage(TemporaryStorage.myInfo, user_to_chat, the_message);
+		MessageInfo mi = new MessageInfo(TemporaryStorage.myInfo, user_to_chat, the_message);
+		
+		communication.sendMessage(mi);
+		
+		MessageRepresentation mr = new MessageRepresentation(mi);
 
 		
 		// add the message to storage and notify chat activity if needed
-		TemporaryStorage.addMessage(user_to_chat, getString(R.string.it_chat_self_name) + ": " + the_message);
+		TemporaryStorage.addMessage(user_to_chat, mr);
 		notifyNewMessageToChatActivity(username_to_chat);
 		
 		if (MainActivity.DEBUG)
@@ -368,21 +382,28 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		
 	}
 
+	/* TODO 
+	 * 
+	 */
 	@Override
-	public void recievedMessage(UserInfo source, String message) {
+	public void recievedMessage(MessageInfo mi) {
 		String username_to_chat;
-		if (source == null)
-			return;
+		UserInfo source = mi.getSource();
+//		if (source == null)
+//			return;
 		
 		if (!TemporaryStorage.user_list.contains(source))
 			return;
 		
 		username_to_chat = source.getUsername();
 		
+		MessageRepresentation mr = new MessageRepresentation(mi);
+		
 		if (TemporaryStorage.getUserInfoByUsername(username_to_chat).isOnline())
 			return;
 		
-		TemporaryStorage.addMessage(source, username_to_chat + ": " + message);		
+		TemporaryStorage.addMessage(source, mr);		
+		
 		notifyNewMessageToChatActivity(username_to_chat);
 		
 		

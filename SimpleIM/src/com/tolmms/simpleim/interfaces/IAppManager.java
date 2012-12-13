@@ -4,6 +4,8 @@ import java.net.UnknownHostException;
 
 import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.communication.CommunicationException;
+import com.tolmms.simpleim.datatypes.MessageInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.exceptions.NotEnoughResourcesException;
 import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
@@ -35,7 +37,8 @@ public interface IAppManager {
 	public void sendMessage(String username_to_chat, String the_message) 
 			throws UserNotLoggedInException, 
 					UserToChatWithIsNotRecognizedException, 
-					CannotSendBecauseOfWrongUserInfo;
+					CannotSendBecauseOfWrongUserInfo, 
+					InvalidDataException;
 	
 	
 
@@ -47,6 +50,5 @@ public interface IAppManager {
 	
 	public void sendMessageToAll(String msg);
 	
-	public void viewingMap(boolean b);
-	
+	public void viewingMap(boolean b);	
 }

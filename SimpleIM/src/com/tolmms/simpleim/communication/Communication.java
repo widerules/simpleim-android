@@ -21,11 +21,13 @@ import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
 import com.tolmms.simpleim.datatypes.LoginMessageAnswer;
 import com.tolmms.simpleim.datatypes.LogoutMessage;
+import com.tolmms.simpleim.datatypes.MessageInfo;
 import com.tolmms.simpleim.datatypes.Procedures;
 import com.tolmms.simpleim.datatypes.RegisterMessage;
 import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.SomeOneLoginMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
 import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
@@ -79,7 +81,11 @@ public class Communication implements ICommunication {
 		
 //		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
 		
-		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
+		UserInfo tempInfo= null;
+		try {
+			tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
+		} catch (InvalidDataException e1) { /* cannot be here */ }
+		
 		loginMessage = new LoginMessage(tempInfo, password);
 		
 		try {
@@ -245,7 +251,11 @@ public class Communication implements ICommunication {
 		// TODO da mettere al posto di s.connect(,) mettere quella con un solo paramentro...
 //		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
 		
-		UserInfo tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
+		UserInfo tempInfo= null;
+		try {
+			tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
+		} catch (InvalidDataException e1) { /* cannot be here */ }
+		
 		registerMessage = new RegisterMessage(tempInfo, password);
 		
 		try {
@@ -313,16 +323,16 @@ public class Communication implements ICommunication {
 	}
 
 	@Override
-	public void sendMessage(UserInfo myInfo, UserInfo user_to_chat, String the_message) throws CannotSendBecauseOfWrongUserInfo {
-		CommunicationMessage m = new CommunicationMessage(TemporaryStorage.myInfo, user_to_chat, the_message, null);
+	public void sendMessage(MessageInfo mi) throws CannotSendBecauseOfWrongUserInfo {
+		CommunicationMessage m = new CommunicationMessage(mi);
 		
 		String mXml = m.toString();
 		
 		DatagramPacket p;
 		try {
 			p = new DatagramPacket(mXml.getBytes(), mXml.getBytes().length, 
-												InetAddress.getByName(user_to_chat.getIp()),
-												Integer.valueOf(user_to_chat.getPort()));
+												InetAddress.getByName(mi.getDestination().getIp()),
+												Integer.valueOf(mi.getDestination().getPort()));
 		} catch (NumberFormatException e) {
 			throw new CannotSendBecauseOfWrongUserInfo();
 		} catch (UnknownHostException e) {
@@ -443,7 +453,7 @@ public class Communication implements ICommunication {
 						continue;
 					}
 					
-					service.recievedMessage(cm.getSource(), cm.getMessage());
+					service.recievedMessage(cm.getMessage());
 					
 				} else if (Procedures.isLogoutMessage(message_type)) {
 					LogoutMessage solm = null;

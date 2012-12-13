@@ -19,6 +19,9 @@ public class MessageXMLTags {
 	public static final String IP_TAG = "ip";
 	public static final String PORT_TAG = "port";
 	public static final String STATUS_TAG = "status";
+	public static final String LATITUDE_TAG = "latitude";
+	public static final String LONGITUDE_TAG = "longitude";
+	public static final String ALTITUDE_TAG = "altitude";
 	
 	public static final String LOGIN_USER_NUMBER_TAG = "number";
 	public static final String REGISTER_USER_ANSWER_TAG = "answer";
@@ -28,6 +31,7 @@ public class MessageXMLTags {
 	public static final String DESTINATION_TAG = "dst";
 	
 	public static final String COMMUNICATION_MESSAGE_SENT_MESSAGE_TAG = "msg";
+	public static final String COMMUNICATION_MESSAGE_SENT_TIME_TAG = "senttime";
 	
 	public static final String LIST_MESSAGE_ENTRY_TAG = "user";
 

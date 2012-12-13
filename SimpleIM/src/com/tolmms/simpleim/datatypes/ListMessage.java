@@ -15,6 +15,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 
@@ -48,6 +49,10 @@ public class ListMessage {
 	
 	public UserInfo userAt(int i) {
 		return users.elementAt(i);
+	}
+	
+	public Vector<UserInfo> getUserList() {
+		return users;
 	}
 	
 	public static ListMessage fromXML(String xml) throws XmlMessageReprException {
@@ -85,14 +90,17 @@ public class ListMessage {
 		for (int i = 0; i < entries.getLength(); ++i) {
 			Element currentEntry = (Element) entries.item(i);
 			
-			UserInfo currentUser = null;
+			UserInfo u;
 			
-			currentUser = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.USERNAME_TAG)),
-									   Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.IP_TAG)), 
-									   Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.PORT_TAG))),
-									   Procedures.getTheStringAndCheckIfNullorEmpty(currentEntry.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
+			try {
+				u = UserInfo.fromXML(currentEntry);
+			} catch (NumberFormatException e) {
+				throw new XmlMessageReprException();
+			} catch (InvalidDataException e) {
+				throw new XmlMessageReprException();
+			}
 			
-			toRet.addUser(currentUser);
+			toRet.addUser(u);
 		}
 		
 		return toRet;
@@ -107,19 +115,7 @@ public class ListMessage {
 		for (UserInfo u : users) {
 			Element entry = doc.createElement(MessageXMLTags.LIST_MESSAGE_ENTRY_TAG);
 			
-			Element u_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
-			u_username.setTextContent(u.username);
-			Element u_ip = doc.createElement(MessageXMLTags.IP_TAG);
-			u_ip.setTextContent(u.ip);
-			Element u_port = doc.createElement(MessageXMLTags.PORT_TAG);
-			u_port.setTextContent(String.valueOf(u.port));
-			Element u_status = doc.createElement(MessageXMLTags.STATUS_TAG);
-			u_status.setTextContent(u.status);
-			
-			entry.appendChild(u_username);
-			entry.appendChild(u_ip);
-			entry.appendChild(u_port);	
-			entry.appendChild(u_status);
+			u.toXML(entry, doc);
 			
 			rootElement.appendChild(entry);			
 		}
@@ -128,9 +124,5 @@ public class ListMessage {
 		
 		return Procedures.getXmlString(doc);
 	}
-
-	public Vector<UserInfo> getUserList() {
-		return users;
-	}
-
+	
 }
