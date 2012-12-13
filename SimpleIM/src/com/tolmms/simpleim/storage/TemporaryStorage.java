@@ -5,6 +5,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 
+import android.util.Log;
+
 import com.tolmms.simpleim.datatypes.MessageRepresentation;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
@@ -29,7 +31,7 @@ public class TemporaryStorage {
 	static {
 		try {
 			myInfo = new UserInfo(null, null, 0);
-		} catch (InvalidDataException e) { /* cannot be here */ }
+		} catch (InvalidDataException e) { Log.d("TemporaryStorage - myInfo", "cannot be here - creating new instance of UserInfo"); }
 		
 		
 		messages = new HashMap<UserInfo, Vector<MessageRepresentation>>();
