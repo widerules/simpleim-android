@@ -22,6 +22,7 @@ import com.tolmms.simpleim.datatypes.RegisterMessage;
 import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.SomeOneLoginMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class UdpServer extends BaseServer {
@@ -299,10 +300,13 @@ public class UdpServer extends BaseServer {
         		System.out.println("Sending REFUSE register to \"" + rm.getUser().getUsername() +"\"");
         	
     		try {
-				answer = new RegisterMessageAnswer(RegisterMessageAnswer.REFUSED).toXML();
+				answer = new RegisterMessageAnswer(rm.getUser(), RegisterMessageAnswer.REFUSED).toXML();
 			} catch (ParserConfigurationException | TransformerException e) {
 				if (DEBUG) 
             		System.out.println("ops... should not be here :("); 
+			} catch (InvalidDataException e) {
+				if (DEBUG) 
+					System.out.println("ops... should not be here :("); 
 			}               		
     	} else {
     		if (DEBUG) 
@@ -312,10 +316,13 @@ public class UdpServer extends BaseServer {
     		registeredUsers.add(new SimpleIMUser(rm.getUser(), rm.getPassword()));
     		
     		try {
-				answer = new RegisterMessageAnswer(RegisterMessageAnswer.ACCEPTED).toXML();
+				answer = new RegisterMessageAnswer(rm.getUser(),RegisterMessageAnswer.ACCEPTED).toXML();
 			} catch (ParserConfigurationException | TransformerException e) {
 				if (DEBUG) 
             		System.out.println("ops... should not be here :("); 
+			} catch (InvalidDataException e) {
+				if (DEBUG) 
+					System.out.println("ops... should not be here :("); 
 			}
     	}
     	
