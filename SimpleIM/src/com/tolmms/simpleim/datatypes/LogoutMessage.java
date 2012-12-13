@@ -13,6 +13,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class LogoutMessage {
@@ -49,11 +50,17 @@ public class LogoutMessage {
 		if (rootEl == null || !rootEl.getNodeName().equals(MessageXMLTags.MESSAGE_TAG))
 			throw new XmlMessageReprException("root element is null or not an " + MessageXMLTags.MESSAGE_TAG + " message");
 
-		UserInfo thisUserInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.USERNAME_TAG)), 
-											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.IP_TAG)),
-											 Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG))),
-											 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
-		return new LogoutMessage(thisUserInfo);
+		UserInfo u;
+		
+		try {
+			u = UserInfo.fromXML(rootEl);
+		} catch (NumberFormatException e) {
+			throw new XmlMessageReprException();
+		} catch (InvalidDataException e) {
+			throw new XmlMessageReprException();
+		}
+		
+		return new LogoutMessage(u);
 	}
 
 	public String toXML() throws ParserConfigurationException, TransformerException {
@@ -63,19 +70,7 @@ public class LogoutMessage {
 		rootElement.setAttribute(MessageXMLTags.MESSAGE_TYPE_ATTRIBUTE, MessageXMLTags.MESSAGE_TYPE_LOGOUT);
 		
 
-		Element e_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
-		e_username.setTextContent(user.username);
-		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
-		e_ip.setTextContent(user.ip);
-		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		e_port.setTextContent(String.valueOf(user.port));
-		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
-		e_status.setTextContent(user.status);
-		
-		rootElement.appendChild(e_username);
-		rootElement.appendChild(e_ip);
-		rootElement.appendChild(e_port);
-		rootElement.appendChild(e_status);
+		user.toXML(rootElement, doc);
 			
 		
 		doc.appendChild(rootElement);

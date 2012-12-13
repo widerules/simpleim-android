@@ -27,7 +27,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
+import com.tolmms.simpleim.datatypes.MessageRepresentation;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.exceptions.UserToChatWithIsNotRecognizedException;
 import com.tolmms.simpleim.interfaces.IAppManager;
@@ -48,7 +50,7 @@ public class ChatActivity extends Activity {
 	
 	boolean isOnline;
 	
-	private Vector<String> user_messages;
+	private Vector<MessageRepresentation> user_messages;
 	
 	private ChatListAdapter cla;
 	
@@ -143,7 +145,20 @@ public class ChatActivity extends Activity {
 			} else {
 				holder = (TextView) convertView.getTag();
 			}
-			holder.setText(user_messages.get(position));
+			
+			MessageRepresentation m = user_messages.get(position);
+			
+			String msgString = "";
+			
+			if (m.getMessageInfo().getSource().equals(TemporaryStorage.getUserInfoByUsername(username_to_chat))) {
+				msgString += username_to_chat;
+			} else {
+				msgString += getString(R.string.it_chat_self_name);
+			}
+			
+			msgString += ": " + m.getMessageInfo().getMessage();
+			
+			holder.setText(msgString);
 
 			return convertView;
 		}
@@ -254,6 +269,9 @@ public class ChatActivity extends Activity {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (CannotSendBecauseOfWrongUserInfo e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidDataException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}

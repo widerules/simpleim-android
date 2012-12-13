@@ -1,8 +1,17 @@
 package com.tolmms.simpleim.datatypes;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
+import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
+
 public class UserInfo {
 	public static final String ONLINE_STATUS = "online";
 	public static final String OFFLINE_STATUS = "offline";
+	
+	public static final double GENOVA_LATITUDE = 44.411111;
+	public static final double GENOVA_LONGITUDE = 8.932778;
 	
 	protected String username;
 	protected String ip;
@@ -14,17 +23,35 @@ public class UserInfo {
 	
 	protected String status;
 
-	public UserInfo(String username, String ip, int port) {
+	public UserInfo(String username, String ip, int port) throws InvalidDataException {
 		this.username = username;
 		this.ip = ip;
 		this.port = port;
-		status = ONLINE_STATUS;
-		//TODO da mettere nel costruttore il status ???
+		status = OFFLINE_STATUS;
+		
+		if (port <= 1 || port > 65535)
+			throw new InvalidDataException("port number is not allowed");
+		
+		latitude = GENOVA_LATITUDE;
+		longitude = GENOVA_LONGITUDE;
+		altitude = 0;
 	}
 	
-	public UserInfo(String username, String ip, int port, String status) {
+	public UserInfo(String username, String ip, int port, String status) 
+			throws InvalidDataException {
 		this(username, ip, port);
 		this.status = status;
+		
+		if (!OFFLINE_STATUS.equals(status) && !ONLINE_STATUS.equals(status))
+			throw new InvalidDataException();
+	}
+	
+	public UserInfo(String username, String ip, int port, String status, double latitude, double longitude, double altitude) 
+			throws InvalidDataException {
+		this(username, ip, port, status);
+		this.latitude = latitude;
+		this.longitude = longitude;
+		this.altitude = altitude;
 	}
 	
 	
@@ -75,18 +102,13 @@ public class UserInfo {
 		return true;
 	}
 
+	/* getters and setters */
 	public String getUsername() {
 		return username;
 	}
 
 	public String getStatus() {
 		return status;
-	}
-
-	public void set(String username, String ip, int port) {
-		this.username = username;
-		this.ip = ip;
-		this.port = port;
 	}
 	
 	public void clearInfos() {
@@ -139,6 +161,57 @@ public class UserInfo {
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+	
+	public void set(String username, String ip, int port) {
+		this.username = username;
+		this.ip = ip;
+		this.port = port;
+	}
+	
+	/*******************************/
+	
+	protected static UserInfo fromXML(Element rootElement) 
+			throws NumberFormatException, XmlMessageReprException, InvalidDataException {
+		
+		String username = Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.USERNAME_TAG));
+		String ip = Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.IP_TAG));
+		int port = Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.PORT_TAG)));
+		String status = Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.STATUS_TAG));
+		double latitude = Double.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.LATITUDE_TAG)));
+		double longitude = Double.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.LONGITUDE_TAG)));
+		double altitude = Double.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.ALTITUDE_TAG)));
+		
+		return new UserInfo(username, ip, port, status, latitude, longitude, altitude);
+	}
+	
+	
+	protected void toXML(Element rootElement, Document doc) {
+		Element e_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
+		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
+		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
+		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
+		Element e_latitude = doc.createElement(MessageXMLTags.LATITUDE_TAG);
+		Element e_longitude = doc.createElement(MessageXMLTags.LONGITUDE_TAG);
+		Element e_altitude = doc.createElement(MessageXMLTags.ALTITUDE_TAG);
+		
+		e_username.setTextContent(this.username);
+		e_ip.setTextContent(this.ip);
+		e_port.setTextContent(String.valueOf(this.port));
+		e_status.setTextContent(this.status);
+		e_latitude.setTextContent(String.valueOf(this.latitude));
+		e_longitude.setTextContent(String.valueOf(this.longitude));
+		e_altitude.setTextContent(String.valueOf(this.altitude));
+		
+		rootElement.appendChild(e_username);
+		rootElement.appendChild(e_ip);
+		rootElement.appendChild(e_port);
+		rootElement.appendChild(e_status);
+		rootElement.appendChild(e_latitude);
+		rootElement.appendChild(e_longitude);
+		rootElement.appendChild(e_altitude);
+		
+//		return rootElement;
 	}
 
 }

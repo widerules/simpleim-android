@@ -14,6 +14,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 /*
@@ -31,25 +32,19 @@ import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 */
 
 public class CommunicationMessage {
-	protected UserInfo src;
-	protected UserInfo dst;
-	protected String message;
-	protected Date sendDate;
+	protected MessageInfo mi;
 
-	public CommunicationMessage(UserInfo src, UserInfo dst, String message, Date sendDate) {
-		this.src = src;
-		this.dst = dst;
-		this.message = message;
-		this.sendDate = sendDate;
+	public CommunicationMessage(MessageInfo mi) {
+		this.mi = mi;
+	}
+	
+	public MessageInfo getMessage() {
+		return mi;
 	}
 	
 	
 	
 	public static CommunicationMessage fromXML(String xml) throws XmlMessageReprException {
-		UserInfo srcInfo = null;
-		UserInfo dstInfo = null;
-		String currentMessage = "";
-		
 		DocumentBuilder docBuilder = null;
 		try {
 			docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -74,31 +69,15 @@ public class CommunicationMessage {
 		if (rootEl == null || !rootEl.getNodeName().equals(MessageXMLTags.MESSAGE_TAG))
 			throw new XmlMessageReprException("root element is null or not an " + MessageXMLTags.MESSAGE_TAG + " message");
 		
-		Element srcElement = (Element) rootEl.getElementsByTagName(MessageXMLTags.SOURCE_TAG).item(0);
-		Element dstElement = (Element) rootEl.getElementsByTagName(MessageXMLTags.DESTINATION_TAG).item(0);
-		Element msgElement = (Element) rootEl.getElementsByTagName(MessageXMLTags.COMMUNICATION_MESSAGE_SENT_MESSAGE_TAG).item(0);
+		MessageInfo mi;
 		
-		if (srcElement == null || dstElement == null || msgElement == null) 
-			throw new XmlMessageReprException("src or dest or msg are null");
+		try {
+			mi = MessageInfo.fromXML(rootEl);
+		} catch (InvalidDataException e) {
+			throw new XmlMessageReprException();
+		}
 		
-		srcInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(srcElement.getElementsByTagName(MessageXMLTags.USERNAME_TAG)),
-				Procedures.getTheStringAndCheckIfNullorEmpty(srcElement.getElementsByTagName(MessageXMLTags.IP_TAG)),
-				Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(srcElement.getElementsByTagName(MessageXMLTags.PORT_TAG))),
-				Procedures.getTheStringAndCheckIfNullorEmpty(srcElement.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
-		
-		dstInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(dstElement.getElementsByTagName(MessageXMLTags.USERNAME_TAG)),
-				Procedures.getTheStringAndCheckIfNullorEmpty(dstElement.getElementsByTagName(MessageXMLTags.IP_TAG)),
-				Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(dstElement.getElementsByTagName(MessageXMLTags.PORT_TAG))),
-				Procedures.getTheStringAndCheckIfNullorEmpty(dstElement.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
-		
-		currentMessage = msgElement.getTextContent();
-		
-		// TODO la data
-		
-		if (currentMessage.length() == 0)
-			throw new XmlMessageReprException("the message is empty");
-		
-		return new CommunicationMessage(srcInfo, dstInfo, currentMessage, null);
+		return new CommunicationMessage(mi);
 	}
 	
 	public String toXML() throws ParserConfigurationException, TransformerException {
@@ -107,78 +86,10 @@ public class CommunicationMessage {
 		Element rootElement = doc.createElement(MessageXMLTags.MESSAGE_TAG);
 		rootElement.setAttribute(MessageXMLTags.MESSAGE_TYPE_ATTRIBUTE, MessageXMLTags.MESSAGE_TYPE_COMMUNICATION_MESSAGE);
 		
-		Element src_user = doc.createElement(MessageXMLTags.SOURCE_TAG);
-		Element src_user_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
-		src_user_username.setTextContent(src.username);
-		Element src_user_ip = doc.createElement(MessageXMLTags.IP_TAG);
-		src_user_ip.setTextContent(src.ip);
-		Element src_user_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		src_user_port.setTextContent(String.valueOf(src.port));
-		Element src_user_status = doc.createElement(MessageXMLTags.STATUS_TAG);
-		src_user_status.setTextContent(src.status);
-		src_user.appendChild(src_user_username);
-		src_user.appendChild(src_user_ip);
-		src_user.appendChild(src_user_port);
-		src_user.appendChild(src_user_status);
-		
-		
-		
-			
-		Element dst_user = doc.createElement(MessageXMLTags.DESTINATION_TAG);
-		Element dst_user_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
-		dst_user_username.setTextContent(dst.username);
-		Element dst_user_ip = doc.createElement(MessageXMLTags.IP_TAG);
-		dst_user_ip.setTextContent(dst.ip);
-		Element dst_user_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		dst_user_port.setTextContent(String.valueOf(dst.port));
-		Element dst_user_status = doc.createElement(MessageXMLTags.STATUS_TAG);
-		dst_user_status.setTextContent(dst.status);
-		dst_user.appendChild(dst_user_username);
-		dst_user.appendChild(dst_user_ip);
-		dst_user.appendChild(dst_user_port);
-		dst_user.appendChild(dst_user_status);
-
-		
-		
-		Element msg = doc.createElement(MessageXMLTags.COMMUNICATION_MESSAGE_SENT_MESSAGE_TAG);
-		msg.appendChild(doc.createTextNode(message));
-		
-		
-		rootElement.appendChild(src_user);
-		rootElement.appendChild(dst_user);
-		rootElement.appendChild(msg);
-		
-		//TODO la data
+		mi.toXML(rootElement, doc);
 		
 		doc.appendChild(rootElement);
 		
 		return Procedures.getXmlString(doc);
 	}
-	
-	@Override
-	public String toString() {
-		return "src: " + src.toString() + "\n" +
-			   "dst: " + dst.toString() + "\n" +
-			   "msg: " + message;
-		
-	}
-
-
-
-	public UserInfo getSource() {
-		return src;
-	}
-	
-	public UserInfo getDestination() {
-		return dst;
-	}
-	
-	public Date getSendingTime() {
-		return sendDate;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
 }

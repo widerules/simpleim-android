@@ -5,23 +5,37 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 
+import com.tolmms.simpleim.datatypes.MessageRepresentation;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 
 public class TemporaryStorage {
 	/**
 	 * The collection of all users that app knows about
 	 */
-	public static Vector<UserInfo> user_list = new Vector<UserInfo>();
+	public static Vector<UserInfo> user_list;
 	
 	/**
 	 * Per each user in user_list contains the cllection of all messages of that user.
 	 */
-	public static HashMap<UserInfo, Vector<String>> messages = new HashMap<UserInfo, Vector<String>>();
+	public static HashMap<UserInfo, Vector<MessageRepresentation>> messages;
 	
 	/**
 	 * Contains My Info
 	 */
-	public static UserInfo myInfo = new UserInfo(null, null, 0);
+	public static UserInfo myInfo;
+
+	
+	static {
+		try {
+			myInfo = new UserInfo(null, null, 0);
+		} catch (InvalidDataException e) { /* cannot be here */ }
+		
+		
+		messages = new HashMap<UserInfo, Vector<MessageRepresentation>>();
+		user_list = new Vector<UserInfo>();		
+		
+	}
 	
 	
 	
@@ -79,8 +93,14 @@ public class TemporaryStorage {
 	 */
 	public static UserInfo getUserInfoByUsername(String username_to_chat) {
 		UserInfo toRet = null;
+		UserInfo user_like_username_to_chat = null;
+		
 		try {
-			toRet = user_list.get(user_list.indexOf(new UserInfo(username_to_chat, null, 0)));
+			user_like_username_to_chat = new UserInfo(username_to_chat, null, 0);
+		} catch (InvalidDataException e) { /* cannot be here */ }
+		
+		try {
+			toRet = user_list.get(user_list.indexOf(user_like_username_to_chat));
 		} catch (ArrayIndexOutOfBoundsException e) { }
 		
 		return toRet;
@@ -91,16 +111,16 @@ public class TemporaryStorage {
 	 * @param user_to_chat
 	 * @return the vector containing the user_to_chat messages or a null ref if user_to_chat is not in user_list
 	 */
-	public static Vector<String> getMessagesByUser(UserInfo user_to_chat) {
+	public static Vector<MessageRepresentation> getMessagesByUser(UserInfo user_to_chat) {
 		if (!user_list.contains(user_to_chat))
 			return null;
 		
-		Vector<String> ms;
+		Vector<MessageRepresentation> ms;
 		
 		ms = messages.get(user_to_chat);
 		
 		if (ms == null) {
-			ms = new Vector<String>();
+			ms = new Vector<MessageRepresentation>();
 			messages.put(user_to_chat, ms);
 		}
 		
@@ -112,7 +132,7 @@ public class TemporaryStorage {
 	 * @param username
 	 * @return the messages of user having username = username or null if a user with username does not exists in user_list
 	 */
-	public static Vector<String> getMessagesByUsername(String username) {
+	public static Vector<MessageRepresentation> getMessagesByUsername(String username) {
 		return getMessagesByUser(getUserInfoByUsername(username));
 	}
 	
@@ -124,10 +144,10 @@ public class TemporaryStorage {
 	 * @param msg
 	 * @return true if message is added successfully or false  if the user_to_chat is not in user_list (the msg is not added!)
 	 */
-	public static boolean addMessage(UserInfo user_to_chat, String msg) {
+	public static boolean addMessage(UserInfo user_to_chat, MessageRepresentation msg) {
 		if (!user_list.contains(user_to_chat))
 			return false;
-		Vector<String> ms = getMessagesByUser(user_to_chat);
+		Vector<MessageRepresentation> ms = getMessagesByUser(user_to_chat);
 		
 		ms.add(msg);
 		

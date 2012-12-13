@@ -14,6 +14,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class LoginMessageAnswer {
@@ -63,17 +64,21 @@ public class LoginMessageAnswer {
 		
 		NodeList nodes = rootEl.getElementsByTagName(MessageXMLTags.LOGIN_USER_NUMBER_TAG);
 		
-		Element e = null;
+		Element e_number = null;
 		
-		if (nodes.getLength() != 1 || (e = (Element) nodes.item(0)) == null)
+		if (nodes.getLength() != 1 || (e_number = (Element) nodes.item(0)) == null)
 			throw new XmlMessageReprException();
 		
-		UserInfo thisUserInfo = new UserInfo(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.USERNAME_TAG)), 
-				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.IP_TAG)),
-				 Integer.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PORT_TAG))),
-				 Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.STATUS_TAG)));
+		UserInfo u;
 		
-		return new LoginMessageAnswer(thisUserInfo, e.getTextContent());
+		try {
+			u = UserInfo.fromXML(rootEl);
+		} catch (NumberFormatException e) {
+			throw new XmlMessageReprException();
+		} catch (InvalidDataException e) {
+			throw new XmlMessageReprException();
+		}
+		return new LoginMessageAnswer(u, e_number.getTextContent());
 		
 	}
 	
@@ -88,19 +93,7 @@ public class LoginMessageAnswer {
 		Element e_number = doc.createElement(MessageXMLTags.LOGIN_USER_NUMBER_TAG);
 		e_number.setTextContent(number);
 		
-		Element e_username = doc.createElement(MessageXMLTags.USERNAME_TAG);
-		e_username.setTextContent(u.username);
-		Element e_ip = doc.createElement(MessageXMLTags.IP_TAG);
-		e_ip.setTextContent(u.ip);
-		Element e_port = doc.createElement(MessageXMLTags.PORT_TAG);
-		e_port.setTextContent(String.valueOf(u.port));
-		Element e_status = doc.createElement(MessageXMLTags.STATUS_TAG);
-		e_status.setTextContent(u.status);
-		
-		rootElement.appendChild(e_username);
-		rootElement.appendChild(e_ip);
-		rootElement.appendChild(e_port);
-		rootElement.appendChild(e_status);
+		u.toXML(rootElement, doc);
 		
 		rootElement.appendChild(e_number);
 		doc.appendChild(rootElement);
