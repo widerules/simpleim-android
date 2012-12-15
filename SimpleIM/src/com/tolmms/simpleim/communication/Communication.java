@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.tolmms.simpleim.MainActivity;
 import com.tolmms.simpleim.datatypes.CommunicationMessage;
+import com.tolmms.simpleim.datatypes.CommunicationMessageAnswer;
 import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
 import com.tolmms.simpleim.datatypes.LoginMessageAnswer;
@@ -27,6 +28,8 @@ import com.tolmms.simpleim.datatypes.RegisterMessage;
 import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.SomeOneLoginMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.UserInfoAnswerMessage;
+import com.tolmms.simpleim.datatypes.UserInfoRequestMessage;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 import com.tolmms.simpleim.exceptions.UsernameAlreadyExistsException;
@@ -214,10 +217,8 @@ public class Communication implements ICommunication {
 			
 			try {
 				address = InetAddress.getByName(userInfo.getIp());
-				port = Integer.valueOf(userInfo.getPort());
+				port = userInfo.getPort();
 			} catch (UnknownHostException e) {
-				continue;
-			} catch (NumberFormatException e) {
 				continue;
 			}
 			
@@ -310,13 +311,52 @@ public class Communication implements ICommunication {
 		s.close();
 	}
 
-	public boolean logout() {
-		if (!service.isUserLoggedIn())
-			return true;		
-		
+	public boolean logout(UserInfo source, List<UserInfo> userList) {		
 		stopListeningForMessages();
 		
-		//TODO send a logout message;
+		LogoutMessage lm = new LogoutMessage(source);
+		String lmXml = null;
+		
+		try {
+			lmXml = lm.toXML();
+		} catch (ParserConfigurationException e) {
+		} catch (TransformerException e) {
+		}
+		
+		if (lmXml == null)
+			return false; //OOPS
+		
+		DatagramSocket s;
+		
+		try {
+			s = new DatagramSocket();
+		} catch (SocketException e1) {
+			return false;
+		}
+		
+		for (UserInfo ui : userList) {
+			if (!ui.isOnline())
+				continue;
+			DatagramPacket p;
+			try {
+				p = new DatagramPacket(lmXml.getBytes(), lmXml.getBytes().length, 
+													InetAddress.getByName(ui.getIp()),
+													ui.getPort());
+			} catch (UnknownHostException e) {
+				/* if there's error... nothing to do */
+				continue;
+			}
+			
+			try {
+				s.send(p);
+			} catch (IOException e) {
+				/* if there's error... nothing to do */
+				continue;
+			}
+			
+		}
+		
+		s.close();
 		
 		return true;
 	}
@@ -331,15 +371,97 @@ public class Communication implements ICommunication {
 		try {
 			p = new DatagramPacket(mXml.getBytes(), mXml.getBytes().length, 
 												InetAddress.getByName(mi.getDestination().getIp()),
-												Integer.valueOf(mi.getDestination().getPort()));
-		} catch (NumberFormatException e) {
-			throw new CannotSendBecauseOfWrongUserInfo();
+												mi.getDestination().getPort());
 		} catch (UnknownHostException e) {
 			throw new CannotSendBecauseOfWrongUserInfo();
 		}
 		
 		outgoingPackets.add(p);
 	}
+	
+	@Override
+	public void sendMessageAck(UserInfo source, UserInfo destination, int hashCode) {
+		CommunicationMessageAnswer cma = new CommunicationMessageAnswer(source, hashCode);
+		String cmaXml = null;
+		try {
+			cmaXml = cma.toXML();
+		} catch (ParserConfigurationException e1) {
+			/* unlikely to be here */
+			return;
+		} catch (TransformerException e1) {
+			/* unlikely to be here */
+			return;
+		}
+		
+		DatagramPacket p;
+		try {
+			p = new DatagramPacket(cmaXml.getBytes(), cmaXml.getBytes().length, 
+												InetAddress.getByName(destination.getIp()),
+												destination.getPort());
+		} catch (UnknownHostException e) {
+			/* if there's error... nothing to do */
+			return;
+		}
+		
+		outgoingPackets.add(p);
+	}
+
+	@Override
+	public void sendUserInfoRequest(UserInfo source, UserInfo destination) {
+		UserInfoRequestMessage uirm = new UserInfoRequestMessage(source);
+		
+		String uirmXml = null;
+		try {
+			uirmXml = uirm.toXML();
+		} catch (ParserConfigurationException e1) {
+			/* unlikely to be here */
+			return;
+		} catch (TransformerException e1) {
+			/* unlikely to be here */
+			return;
+		}
+		
+		DatagramPacket p;
+		try {
+			p = new DatagramPacket(uirmXml.getBytes(), uirmXml.getBytes().length, 
+												InetAddress.getByName(destination.getIp()),
+												destination.getPort());
+		} catch (UnknownHostException e) {
+			/* if there's error... nothing to do */
+			return;
+		}
+		
+		outgoingPackets.add(p);
+	}
+
+	@Override
+	public void sendUserInfoAnswer(UserInfo source, UserInfo destination) {
+		UserInfoAnswerMessage uiam = new UserInfoAnswerMessage(source);
+		
+		String uiamXml = null;
+		try {
+			uiamXml = uiam.toXML();
+		} catch (ParserConfigurationException e1) {
+			/* unlikely to be here */
+			return;
+		} catch (TransformerException e1) {
+			/* unlikely to be here */
+			return;
+		}
+		
+		DatagramPacket p;
+		try {
+			p = new DatagramPacket(uiamXml.getBytes(), uiamXml.getBytes().length, 
+												InetAddress.getByName(destination.getIp()),
+												destination.getPort());
+		} catch (UnknownHostException e) {
+			/* if there's error... nothing to do */
+			return;
+		}
+		
+		outgoingPackets.add(p);
+	}
+	
 	
 	class HandleIncomingPackets extends Thread {
 		private boolean canRun = true;
@@ -444,6 +566,9 @@ public class Communication implements ICommunication {
 					continue;
 				}
 				
+				if (message_type == null)
+					continue;
+				
 				if (Procedures.isCommunicationMessage(message_type)) {
 					CommunicationMessage cm = null;
 					try {
@@ -474,6 +599,37 @@ public class Communication implements ICommunication {
 					}
 					
 					service.userLoggedIn(solm.getSource());
+				} else if (Procedures.isCommunicationMessageAnswer(message_type)) {
+					CommunicationMessageAnswer cma = null;
+					
+					try {
+						cma = CommunicationMessageAnswer.fromXML(the_msg);
+					} catch (XmlMessageReprException e) {
+						continue;
+					}
+					
+					service.receivedMessageAnswer(cma.getUser(), cma.getMessageHashAck());
+					
+				} else if (Procedures.isUserInfoRequestMessage(message_type)) {
+					UserInfoRequestMessage uirm = null;
+					
+					try {
+						uirm = UserInfoRequestMessage.fromXML(the_msg);
+					} catch (XmlMessageReprException e) {
+						continue;
+					}
+					
+					service.receivedUserInfoRequest(uirm.getSource());
+					
+				} else if (Procedures.isUserInfoAnswerMessage(message_type)) {
+					UserInfoAnswerMessage uiam = null;
+					
+					try {
+						uiam = UserInfoAnswerMessage.fromXML(the_msg);
+					} catch (XmlMessageReprException e) {
+						continue;
+					}
+					service.receivedUserInfoAnswer(uiam.getSource());
 					
 				}
 				
@@ -490,7 +646,6 @@ public class Communication implements ICommunication {
 	 * private methods
 	 */
 	private void startListeningForMessages() throws SocketException {
-		outgoingPackets = new LinkedBlockingQueue<DatagramPacket>();
 		incomingPackets = new LinkedBlockingQueue<DatagramPacket>();
 		handleIncomingPackets = new HandleIncomingPackets(serviceUdpPort);
 		handleRequests = new HandleRequests();
@@ -517,5 +672,6 @@ public class Communication implements ICommunication {
 		outgoingPackets = null;
 		incomingPackets = null;
 	}
+	
 
 }

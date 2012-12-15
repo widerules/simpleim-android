@@ -13,6 +13,9 @@ public class UserInfo {
 	public static final double GENOVA_LATITUDE = 44.411111;
 	public static final double GENOVA_LONGITUDE = 8.932778;
 	
+	public static final int MIN_ALLOWED_PORT = 1;
+	public static final int MAX_ALLOWED_PORT = 65535;
+	
 	protected String username;
 	protected String ip;
 	protected int port;
@@ -29,7 +32,7 @@ public class UserInfo {
 		this.port = port;
 		status = OFFLINE_STATUS;
 		
-		if (port <= 1 || port > 65535)
+		if (port < MIN_ALLOWED_PORT || port > MAX_ALLOWED_PORT)
 			throw new InvalidDataException("port number is not allowed");
 		
 		latitude = GENOVA_LATITUDE;

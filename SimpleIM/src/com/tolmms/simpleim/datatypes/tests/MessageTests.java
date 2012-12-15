@@ -9,6 +9,7 @@ import javax.xml.transform.TransformerException;
 import org.junit.Test;
 
 import com.tolmms.simpleim.datatypes.CommunicationMessage;
+import com.tolmms.simpleim.datatypes.CommunicationMessageAnswer;
 import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
 import com.tolmms.simpleim.datatypes.LoginMessageAnswer;
@@ -18,6 +19,8 @@ import com.tolmms.simpleim.datatypes.RegisterMessage;
 import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.SomeOneLoginMessage;
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.datatypes.UserInfoAnswerMessage;
+import com.tolmms.simpleim.datatypes.UserInfoRequestMessage;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
@@ -330,5 +333,100 @@ public class MessageTests {
 		assertEqualsUserInfos(solm.getSource(), solmFromXml.getSource());
 	}
 	
+	
+	@Test
+	public void CommunicationMessageAnswerCorrectlySerializedDeserialized() {
+		UserInfo u = null;
+		CommunicationMessageAnswer cma;
+		
+		try {
+			u = new UserInfo("dummy", "10.10.1.2", 10000);
+		} catch (InvalidDataException e) {
+			fail();
+		}
+		
+		cma = new CommunicationMessageAnswer(u, 123456);
+		
+		String cmaXml = null;
+		try {
+			cmaXml = cma.toXML();
+		} catch (ParserConfigurationException e) {
+			fail();
+		} catch (TransformerException e) {
+			fail();
+		}
+		
+		CommunicationMessageAnswer cmaFromXml = null;
+		try {
+			cmaFromXml = CommunicationMessageAnswer.fromXML(cmaXml);
+		} catch (XmlMessageReprException e) {
+			fail();
+		}
+		
+		assertEquals(cma.getMessageHashAck(), cmaFromXml.getMessageHashAck());
+		assertEqualsUserInfos(cma.getUser(), cmaFromXml.getUser());
+	}
+	
+	public void UserInfoAnswerMessageCorrectlySerializedDeserialized() throws InvalidDataException {
+		UserInfo u = null;
+		UserInfoAnswerMessage uiam = null;
+		
+		try {
+			u = new UserInfo("dummy", "10.10.1.2", 10000);
+		} catch (InvalidDataException e) {
+			fail();
+		}
+		
+		uiam = new UserInfoAnswerMessage(u);
+		
+		String uiamXml = null;
+		try {
+			uiamXml = uiam.toXML();
+		} catch (ParserConfigurationException e) {
+			fail();
+		} catch (TransformerException e) {
+			fail();
+		}
+		
+		UserInfoAnswerMessage uiamFromXml = null;
+		try {
+			uiamFromXml = UserInfoAnswerMessage.fromXML(uiamXml);
+		} catch (XmlMessageReprException e) {
+			fail();
+		}
+		
+		assertEqualsUserInfos(uiam.getSource(), uiamFromXml.getSource());
+	}
+	
+	public void UserInfoRequestMessageCorrectlySerializedDeserialized() throws InvalidDataException {
+		UserInfo u = null;
+		UserInfoRequestMessage uirm = null;
+		
+		try {
+			u = new UserInfo("dummy", "10.10.1.2", 10000);
+		} catch (InvalidDataException e) {
+			fail();
+		}
+		
+		uirm = new UserInfoRequestMessage(u);
+		
+		String uirmXml = null;
+		try {
+			uirmXml = uirm.toXML();
+		} catch (ParserConfigurationException e) {
+			fail();
+		} catch (TransformerException e) {
+			fail();
+		}
+		
+		UserInfoRequestMessage uirmFromXml = null;
+		try {
+			uirmFromXml = UserInfoRequestMessage.fromXML(uirmXml);
+		} catch (XmlMessageReprException e) {
+			fail();
+		}
+		
+		assertEqualsUserInfos(uirm.getSource(), uirmFromXml.getSource());
+	}
 	
 }

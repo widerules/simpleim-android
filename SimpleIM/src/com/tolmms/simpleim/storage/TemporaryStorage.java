@@ -12,13 +12,15 @@ import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 
 public class TemporaryStorage {
+	private static int MAX_MESSAGE_COUNT_HISTORY_PER_USER = 50;
+	
 	/**
 	 * The collection of all users that app knows about
 	 */
 	public static Vector<UserInfo> user_list;
 	
 	/**
-	 * Per each user in user_list contains the cllection of all messages of that user.
+	 * Per each user in user_list contains the collection of all messages of that user.
 	 */
 	public static HashMap<UserInfo, Vector<MessageRepresentation>> messages;
 	
@@ -30,7 +32,7 @@ public class TemporaryStorage {
 	
 	static {
 		try {
-			myInfo = new UserInfo(null, null, 0);
+			myInfo = new UserInfo(null, null, UserInfo.MIN_ALLOWED_PORT);
 		} catch (InvalidDataException e) { Log.d("TemporaryStorage - myInfo", "cannot be here - creating new instance of UserInfo"); }
 		
 		
@@ -39,35 +41,15 @@ public class TemporaryStorage {
 		
 	}
 	
+	public static int getMaxMessageCountHistoryPerUser() {
+		return MAX_MESSAGE_COUNT_HISTORY_PER_USER;
+	}
 	
-	
-	//public static HashMap<UserInfo, Vector<Pair<UserInfo, String>>> messages = new HashMap<UserInfo, Vector<Pair<UserInfo,String>>>();
-//	public static Vector<Pair<UserInfo, String>> getMessagesByUser(UserInfo user_to_chat) {
-//		Vector<Pair<UserInfo, String>> ms;
-//		
-//		ms = messages.get(user_to_chat);
-//		
-//		if (ms == null) {
-//			ms = new Vector<Pair<UserInfo,String>>();
-//			messages.put(user_to_chat, ms);
-//		}
-//		
-//		return ms;
-//	}
-//	
-//	public static Vector<Pair<UserInfo, String>> getMessagesByUsername(String username) {
-//		return getMessagesByUser(getUserInfoByUsername(username));
-//	}
-//	
-//	
-//	
-//	public static void addMessage(UserInfo user_to_chat, UserInfo user_from, String msg) {
-//		Vector<Pair<UserInfo, String>> ms = getMessagesByUser(user_to_chat);
-//		
-//		ms.add(new Pair<UserInfo, String>(user_from, msg));
-//		
-//		//TODO bisogna limitare la capacita della storia dei msg
-//	}
+	public static void setMaxMessageCountHistoryPerUser(int n) {
+		if (n <= 0)
+			return;
+		MAX_MESSAGE_COUNT_HISTORY_PER_USER = n;
+	}
 	
 	
 	
@@ -98,8 +80,8 @@ public class TemporaryStorage {
 		UserInfo user_like_username_to_chat = null;
 		
 		try {
-			user_like_username_to_chat = new UserInfo(username_to_chat, null, 0);
-		} catch (InvalidDataException e) { /* cannot be here */ }
+			user_like_username_to_chat = new UserInfo(username_to_chat, null, UserInfo.MIN_ALLOWED_PORT);
+		} catch (InvalidDataException e) {  Log.d("TemporaryStorage - getUserInfoByUsername", "cannot be here - creating new instance of UserInfo"); }
 		
 		try {
 			toRet = user_list.get(user_list.indexOf(user_like_username_to_chat));
@@ -151,9 +133,12 @@ public class TemporaryStorage {
 			return false;
 		Vector<MessageRepresentation> ms = getMessagesByUser(user_to_chat);
 		
-		ms.add(msg);
 		
-		//TODO bisogna limitare la capacita della storia dei msg
+		if (ms.size() >= MAX_MESSAGE_COUNT_HISTORY_PER_USER) {
+			ms.remove(0);
+		}
+		
+		ms.add(msg);
 		
 		return true;
 	}
