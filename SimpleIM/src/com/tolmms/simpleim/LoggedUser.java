@@ -30,6 +30,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.exceptions.CannotLogOutException;
+import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;
 import com.tolmms.simpleim.storage.TemporaryStorage;
@@ -273,7 +275,15 @@ public class LoggedUser extends Activity {
 	    // Handle item selection
 	    switch (item.getItemId()) {
 	    case R.id.menu_logout:
-	        iMService.exit();
+	        try {
+				iMService.exit();
+			} catch (UserNotLoggedInException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (CannotLogOutException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        startActivity(new Intent(LoggedUser.this, MainActivity.class));
 	        LoggedUser.this.finish();
 	        return true;

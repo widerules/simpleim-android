@@ -30,6 +30,7 @@ import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.datatypes.MessageRepresentation;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
+import com.tolmms.simpleim.exceptions.CannotLogOutException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.exceptions.UserToChatWithIsNotRecognizedException;
 import com.tolmms.simpleim.interfaces.IAppManager;
@@ -362,7 +363,15 @@ public class ChatActivity extends Activity {
 	    // Handle item selection
 	    switch (item.getItemId()) {
 	    case R.id.menu_logout:
-	        iMService.exit();
+	        try {
+				iMService.exit();
+			} catch (UserNotLoggedInException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (CannotLogOutException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        startActivity(new Intent(ChatActivity.this, MainActivity.class));
 	        ChatActivity.this.finish();
 	        return true;

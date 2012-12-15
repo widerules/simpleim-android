@@ -120,6 +120,19 @@ public class Procedures {
 	public static boolean isRegisterMessage(String type) {
 		return MessageXMLTags.MESSAGE_TYPE_REGISTER.equals(type);
 	}
+
+
+	public static boolean isCommunicationMessageAnswer(String type) {
+		return MessageXMLTags.MESSAGE_TYPE_COMMUNICATION_MESSAGE_ANSWER.equals(type);
+	}
+
+	public static boolean isUserInfoRequestMessage(String type) {
+		return MessageXMLTags.MESSAGE_TYPE_USER_INFO_REQUEST.equals(type);
+	}
+	
+	public static boolean isUserInfoAnswerMessage(String type) {
+		return MessageXMLTags.MESSAGE_TYPE_USER_INFO_ANSWER.equals(type);
+	}
 	
 	
 

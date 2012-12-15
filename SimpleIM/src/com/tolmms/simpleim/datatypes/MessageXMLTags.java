@@ -9,7 +9,10 @@ public class MessageXMLTags {
 	public static final String MESSAGE_TYPE_REGISTER = "register";
 	public static final String MESSAGE_TYPE_REGISTER_ANSWER = "register_answer";
 	public static final String MESSAGE_TYPE_COMMUNICATION_MESSAGE = "communication";
+	public static final String MESSAGE_TYPE_COMMUNICATION_MESSAGE_ANSWER = "communication_answer";
 	public static final String MESSAGE_TYPE_USER_LIST = "list";
+	public static final String MESSAGE_TYPE_USER_INFO_REQUEST = "userinfo_request";
+	public static final String MESSAGE_TYPE_USER_INFO_ANSWER = "userinfo_answer";
 	
 //	public static final String MESSAGE_TYPE_SOME_ONE_LOGOUT = "some_one_logout";
 	public static final String MESSAGE_TYPE_SOME_ONE_LOGIN = "some_one_login";
@@ -34,7 +37,6 @@ public class MessageXMLTags {
 	public static final String COMMUNICATION_MESSAGE_SENT_TIME_TAG = "senttime";
 	
 	public static final String LIST_MESSAGE_ENTRY_TAG = "user";
-
 	
-	
+	public static final String COMMUNICATION_ANSWER_HASH_TAG = "hash";
 }

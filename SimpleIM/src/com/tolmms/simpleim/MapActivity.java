@@ -26,6 +26,8 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.tolmms.simpleim.datatypes.UserInfo;
+import com.tolmms.simpleim.exceptions.CannotLogOutException;
+import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;
 import com.tolmms.simpleim.storage.TemporaryStorage;
@@ -325,7 +327,15 @@ public class MapActivity extends Activity {
 	    // Handle item selection
 	    switch (item.getItemId()) {
 	    case R.id.menu_logout:
-	        iMService.exit();
+	        try {
+				iMService.exit();
+			} catch (UserNotLoggedInException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (CannotLogOutException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        startActivity(new Intent(MapActivity.this, MainActivity.class));
 	        MapActivity.this.finish();
 	        return true;

@@ -12,4 +12,8 @@ public interface IAppManagerForComm {
 	public void userLoggedOut(UserInfo source);
 	public void userLoggedIn(UserInfo source);
 	public boolean isUserLoggedIn();
+	public void receivedMessageAnswer(UserInfo user, int messageHashAck);
+	
+	public void receivedUserInfoRequest(UserInfo source);
+	public void receivedUserInfoAnswer(UserInfo source);
 }

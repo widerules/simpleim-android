@@ -24,7 +24,11 @@ public interface ICommunication {
 			throws CannotSendBecauseOfWrongUserInfo;
 	
 	
-	public boolean logout();
+	public boolean logout(UserInfo source, List<UserInfo> userList);
+
+	public void sendMessageAck(UserInfo source, UserInfo destination, int hashCode);
+	public void sendUserInfoRequest(UserInfo source, UserInfo destination);
+	public void sendUserInfoAnswer(UserInfo source, UserInfo destination);
 	
 	public void announceIAmOnline(UserInfo me, List<UserInfo> userList);
 
