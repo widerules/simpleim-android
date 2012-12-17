@@ -24,7 +24,7 @@ public class RegisterMessage {
 		this.user = user;
 		this.password = password;
 		
-		//TODO some additional information when registering may be required
+		/* some additional information may be required when registering... this is minimal */
 	}
 	
 	public UserInfo getUser() {
@@ -69,9 +69,9 @@ public class RegisterMessage {
 		} catch (InvalidDataException e) {
 			throw new XmlMessageReprException();
 		}
+
+		/* some additional information may be required when registering... this is minimal */
 		
-		
-		//TODO some additional information when registering may be required
 		return new RegisterMessage(u, Procedures.getTheStringAndCheckIfNullorEmpty(rootEl.getElementsByTagName(MessageXMLTags.PASSWORD_TAG)));
 	}
 	
@@ -89,7 +89,7 @@ public class RegisterMessage {
 		
 		rootElement.appendChild(e_password);
 		
-		//TODO some additional information may be required when registering...
+		/* some additional information may be required when registering... this is minimal */
 		
 		doc.appendChild(rootElement);
 		

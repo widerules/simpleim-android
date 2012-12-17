@@ -53,11 +53,6 @@ public class Procedures {
         
         return sw.toString();
 	}
-	
-	public Procedures() {
-		// TODO Auto-generated constructor stub
-	}
-
 
 	public static String getMessageType(String the_msg) throws XmlMessageReprException {
 		DocumentBuilder docBuilder = null;
@@ -88,7 +83,6 @@ public class Procedures {
 		
 		if (rootEl == null || !rootEl.getNodeName().equals(MessageXMLTags.MESSAGE_TAG))
 			return null;
-//			throw new XmlMessageReprException("root element is null or not an " + MessageXMLTags.MESSAGE_TAG + " message");
 
 		String toRet = rootEl.getAttribute(MessageXMLTags.MESSAGE_TYPE_ATTRIBUTE);
 		toRet.trim();

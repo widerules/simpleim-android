@@ -13,23 +13,25 @@ import com.tolmms.simpleim.exceptions.UsernameOrPasswordException;
 
 public interface ICommunication {
 	public UserInfo login(String username, String password) 
-			throws UsernameOrPasswordException, CommunicationException, 
-					UnknownHostException, UnableToStartSockets;
+			throws UsernameOrPasswordException, 
+					CommunicationException, 
+					UnknownHostException, 
+					UnableToStartSockets;
+	
+	public void announceIAmOnline(UserInfo me, List<UserInfo> userList);
+	
+	public void logout(UserInfo source, List<UserInfo> userList);
 	
 	public void register(String username, String password) 
-			throws CommunicationException, UsernameAlreadyExistsException, 
+			throws CommunicationException, 
+					UsernameAlreadyExistsException, 
 					UnknownHostException;
 	
 	public void sendMessage(MessageInfo mi)
 			throws CannotSendBecauseOfWrongUserInfo;
 	
-	
-	public boolean logout(UserInfo source, List<UserInfo> userList);
-
 	public void sendMessageAck(UserInfo source, UserInfo destination, int hashCode);
 	public void sendUserInfoRequest(UserInfo source, UserInfo destination);
 	public void sendUserInfoAnswer(UserInfo source, UserInfo destination);
-	
-	public void announceIAmOnline(UserInfo me, List<UserInfo> userList);
 
 }

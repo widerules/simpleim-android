@@ -41,11 +41,8 @@ import com.tolmms.simpleim.tools.Tools;
 
 public class ChatActivity extends Activity {
 	public static final String USERNAME_TO_CHAT_WITH_EXTRA = "com.tolmms.simpleim.ChatActivity.USERNAME_EXTRA";
-
-	public static final String MESSAGE_TO_ALL_ACTION = "com.tolmms.simpleim.ChatActivity.MESSAGE_TO_ALL_ACTION";
 	public static final String MESSAGE_TO_A_USER = "com.tolmms.simpleim.ChatActivity.MESSAGE_TO_A_USER";
 	
-
 	private String username_to_chat;
 	private ImageView iv_status_user;
 	private ListView l;
@@ -56,7 +53,7 @@ public class ChatActivity extends Activity {
 	
 	private ChatListAdapter cla;
 	
-	
+	private int MAX_MESSAGE_SENT_RETRIES;
 	
 	/***********************************/
 	/* stuff for service */
@@ -89,14 +86,14 @@ public class ChatActivity extends Activity {
 			
 			if (MainActivity.DEBUG)
 				Log.d("ChatActivity", "chiamato onServiceConnected");
-			
-			//TODO mettere per da vero!
-//			if (!iMService.isUserLoggedIn()) {
-//				startActivity(new Intent(LoggedUser.this, MainActivity.class));
-//				LoggedUser.this.finish();
-//			}
+
+			if (!iMService.isUserLoggedIn()) {
+				startActivity(new Intent(ChatActivity.this, MainActivity.class));
+				ChatActivity.this.finish();
+			}
 			
 			iMService.setCurrentUserChat(username_to_chat);
+			MAX_MESSAGE_SENT_RETRIES = IAppManager.NUMBER_MESSAGE_SENT_RETRIES;
 		}
 		
 	};
@@ -133,13 +130,15 @@ public class ChatActivity extends Activity {
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
-			TextView holder;
+			ViewHolder holder;
 			if (convertView == null) {
 				convertView = mInflater.inflate(R.layout.listview_row_chat, null);
-				holder = (TextView) convertView.findViewById(R.id.tv_row_chat);
+				holder = new ViewHolder();
+				holder.tv_msg_chat = (TextView) convertView.findViewById(R.id.tv_msg_chat);
+				holder.iv_status_msg_chat = (ImageView) convertView.findViewById(R.id.iv_status_msg_chat);
 				convertView.setTag(holder);
 			} else {
-				holder = (TextView) convertView.getTag();
+				holder = (ViewHolder) convertView.getTag();
 			}
 			
 			MessageRepresentation m = user_messages.get(position);
@@ -154,12 +153,25 @@ public class ChatActivity extends Activity {
 			
 			msgString += ": " + m.getMessageInfo().getMessage();
 			
-			holder.setText(msgString);
+			holder.tv_msg_chat.setText(msgString);
+			
+			if (m.ackRecieved)
+				holder.iv_status_msg_chat.setImageResource(R.drawable.ic_message_dispatched);
+			else 
+				if (m.sentRetries >= MAX_MESSAGE_SENT_RETRIES)
+					holder.iv_status_msg_chat.setImageResource(R.drawable.ic_message_not_dispatched);
+				else
+					holder.iv_status_msg_chat.setImageResource(R.drawable.ic_message_sending);
 
 			return convertView;
 		}
 	}
 	
+	
+	private static class ViewHolder {
+		TextView tv_msg_chat;
+		ImageView iv_status_msg_chat;
+	}
 	
 	@Override
 	protected void onPause() {
@@ -259,7 +271,7 @@ public class ChatActivity extends Activity {
 					
 					@Override
 					public void run() {
-						Looper.prepare(); //TODO mi da errore se lo cancello quando cerco di loggarmi la seconda volta (dopo essermi sloggato)
+						Looper.prepare(); /* if i delete it, then it gives me an error */
 						String the_message = tv_send_msg.getText().toString().trim();
 
 						h.post(new Runnable() {
@@ -302,7 +314,7 @@ public class ChatActivity extends Activity {
 					
 				};
 				
-				sendMessageTh.start();				
+				sendMessageTh.start();
 			}
 		});
 	}
@@ -314,7 +326,6 @@ public class ChatActivity extends Activity {
 	        String action = intent.getAction();
 	        String intentUsername;
 	        String newUserState;
-	        
 	        
 	        if (!action.equals(IAppManager.INTENT_ACTION_USER_STATE_CHANGED))
 	        	return;
@@ -339,13 +350,11 @@ public class ChatActivity extends Activity {
 	        String action = intent.getAction();
 	        String intentUsername;
 	        
-	        
 	        if (!action.equals(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT))
 	        	return;
 	        
 	        intentUsername = intent.getStringExtra(IAppManager.INTENT_ACTION_MESSAGES_RECEIVED_SENT_USERNAME_EXTRA);
 	        
-	        //se l'intent che ricievo si rifferisce al utente con cui adesso non chatto.. ritorno
 	        if (!intentUsername.equals(username_to_chat))
 	        	return;
 	        
@@ -380,7 +389,7 @@ public class ChatActivity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.activity_logged_user, menu);
+		getMenuInflater().inflate(R.menu.activity_chat, menu);
 		return true;
 	}
 	
@@ -395,7 +404,7 @@ public class ChatActivity extends Activity {
 
 				@Override
 				public void run() {
-					Looper.prepare(); // TODO mi da errore se lo cancello
+					Looper.prepare(); /* if i delete it, then it gives me an error */
 					
 					try {
 						iMService.exit();

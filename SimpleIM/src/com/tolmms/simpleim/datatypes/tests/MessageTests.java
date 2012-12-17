@@ -36,7 +36,7 @@ public class MessageTests {
 		UserInfo uFromLmFromLmXml = null;
 		
 		try {
-			u = new UserInfo("pippo", "10.10.0.1", 50000, UserInfo.ONLINE_STATUS, 12.33, 12.33, 12.33);
+			u = new UserInfo("pippo", "10.10.0.1", 50000, UserInfo.ONLINE_STATUS, 12.33, 12.33, 12.33, true);
 		} catch (InvalidDataException e) {
 			fail();
 		}
@@ -105,6 +105,12 @@ public class MessageTests {
 		assertEquals(cm.getMessageInfo().getMessage(), cmFromXml.getMessageInfo().getMessage());
 		assertEquals(cm.getMessageInfo().getMessage(), cmFromXml.getMessageInfo().getMessage());
 		assertEquals(cm.getMessageInfo().getSentTimeString(), cmFromXml.getMessageInfo().getSentTimeString());
+		
+		
+		assertEquals(cm.getMessageInfo(), cmFromXml.getMessageInfo());
+		
+		
+		assertEquals(cm.getMessageInfo().hashCode(), cmFromXml.getMessageInfo().hashCode());
 		
 		// fails always... so it is commented. The problem maybe is precision??
 //		assertEquals(cm.getMessageInfo().getSentTime(), cmFromXml.getMessageInfo().getSentTime());
@@ -345,7 +351,14 @@ public class MessageTests {
 			fail();
 		}
 		
-		cma = new CommunicationMessageAnswer(u, 123456);
+		MessageInfo mi = null;
+		try {
+			mi = new MessageInfo(u, new UserInfo("sfsdf", "10.10.1.1", UserInfo.MIN_ALLOWED_PORT), "ciao ciao");
+		} catch (InvalidDataException e1) {
+			fail();
+		}
+		
+		cma = new CommunicationMessageAnswer(u, mi.hashCode());
 		
 		String cmaXml = null;
 		try {

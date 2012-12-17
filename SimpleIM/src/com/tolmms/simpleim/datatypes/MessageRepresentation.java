@@ -1,7 +1,6 @@
 package com.tolmms.simpleim.datatypes;
 
 public class MessageRepresentation {
-	public static final int MAX_RETRIES = 3;
 	private MessageInfo mi;
 	public int sentRetries;
 	public boolean ackRecieved;

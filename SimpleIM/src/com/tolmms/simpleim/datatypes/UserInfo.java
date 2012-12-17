@@ -28,6 +28,8 @@ public class UserInfo {
 	
 	protected String status;
 
+	private boolean locationData;
+
 	public UserInfo(String username, String ip, int port) throws InvalidDataException {
 		this.username = username;
 		this.ip = ip;
@@ -40,6 +42,8 @@ public class UserInfo {
 		latitude = GENOVA_LATITUDE;
 		longitude = GENOVA_LONGITUDE;
 		altitude = 0;
+		
+		locationData = false;
 	}
 	
 	public UserInfo(String username, String ip, int port, String status) 
@@ -51,12 +55,14 @@ public class UserInfo {
 			throw new InvalidDataException();
 	}
 	
-	public UserInfo(String username, String ip, int port, String status, double latitude, double longitude, double altitude) 
+	public UserInfo(String username, String ip, int port, String status, double latitude, double longitude, double altitude, boolean locationData) 
 			throws InvalidDataException {
 		this(username, ip, port, status);
 		this.latitude = latitude;
 		this.longitude = longitude;
 		this.altitude = altitude;
+		
+		this.locationData = locationData;
 	}
 	
 	
@@ -186,8 +192,9 @@ public class UserInfo {
 		double latitude = Double.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.LATITUDE_TAG)));
 		double longitude = Double.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.LONGITUDE_TAG)));
 		double altitude = Double.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.ALTITUDE_TAG)));
+		boolean locationData = Boolean.valueOf(Procedures.getTheStringAndCheckIfNullorEmpty(rootElement.getElementsByTagName(MessageXMLTags.LOCATION_DATA_TAG)));
 		
-		return new UserInfo(username, ip, port, status, latitude, longitude, altitude);
+		return new UserInfo(username, ip, port, status, latitude, longitude, altitude, locationData);
 	}
 	
 	
@@ -199,6 +206,7 @@ public class UserInfo {
 		Element e_latitude = doc.createElement(MessageXMLTags.LATITUDE_TAG);
 		Element e_longitude = doc.createElement(MessageXMLTags.LONGITUDE_TAG);
 		Element e_altitude = doc.createElement(MessageXMLTags.ALTITUDE_TAG);
+		Element e_locationData = doc.createElement(MessageXMLTags.LOCATION_DATA_TAG);
 		
 		e_username.setTextContent(this.username);
 		e_ip.setTextContent(this.ip);
@@ -207,6 +215,7 @@ public class UserInfo {
 		e_latitude.setTextContent(String.valueOf(this.latitude));
 		e_longitude.setTextContent(String.valueOf(this.longitude));
 		e_altitude.setTextContent(String.valueOf(this.altitude));
+		e_locationData.setTextContent(String.valueOf(this.locationData));
 		
 		rootElement.appendChild(e_username);
 		rootElement.appendChild(e_ip);
@@ -215,8 +224,17 @@ public class UserInfo {
 		rootElement.appendChild(e_latitude);
 		rootElement.appendChild(e_longitude);
 		rootElement.appendChild(e_altitude);
+		rootElement.appendChild(e_locationData);
 		
 //		return rootElement;
+	}
+
+	public void locationData(boolean locationData) {
+		this.locationData = locationData;
+	}
+	
+	public boolean hasLocationData() {
+		return locationData;
 	}
 
 }

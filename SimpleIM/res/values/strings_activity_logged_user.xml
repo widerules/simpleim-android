@@ -7,4 +7,9 @@
     <string name="it_view_on_map_button">Vis. sulla mappa</string>
     <string name="it_cancel">Annulla</string>
     
+    <string name="it_error_send_all">Errore: Uno o più messaggi non sono stati inviati.</string>
+
+    <string name="it_activate_location_functionality">Attiva funzionalità di Localizzazione</string>
+	<string name="it_others_refresh_rate_location">Tempo di agg. dei dati degli altri</string>
+	<string name="it_my_refresh_rate_location">Tempo di agg. dei miei dati</string>
 </resources>
