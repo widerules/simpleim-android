@@ -11,6 +11,7 @@ import serversimpleim.datatypes.SimpleIMUser;
 public class BaseServer {
 	public static final boolean DEBUG = true;
 	
+	UserInfo serverUserInfo;
 	
     Vector<SimpleIMUser> registeredUsers;
     

@@ -18,7 +18,6 @@ import com.tolmms.simpleim.datatypes.ListMessage;
 import com.tolmms.simpleim.datatypes.LoginMessage;
 import com.tolmms.simpleim.datatypes.Procedures;
 import com.tolmms.simpleim.datatypes.RegisterMessage;
-import com.tolmms.simpleim.datatypes.RegisterMessageAnswer;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
@@ -26,6 +25,7 @@ import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
  * No logner supported
  * @author Artur
  *
+ * NOT IMPLEMENTED
  */
 public class TcpServer extends BaseServer {
 	

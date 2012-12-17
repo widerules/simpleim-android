@@ -1,14 +1,20 @@
 package serversimpleim.datatypes;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import com.tolmms.simpleim.datatypes.UserInfo;
 
 public class SimpleIMUser {
 	UserInfo user;
 	String password;
+	public Date last_update;
 	
 	public SimpleIMUser(UserInfo user, String password) {
 		this.user = user;
 		this.password = password;
+		
+		this.last_update = Calendar.getInstance().getTime();
 	}
 
 	UserInfo getUserInfo() {
