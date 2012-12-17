@@ -292,6 +292,7 @@ public class UdpServer extends BaseServer {
 		if (simu == null)
 			return;
 		
+		simu.getUser().locationData(source.hasLocationData());
 		simu.getUser().setAltitude(source.getAltitude());
 		simu.getUser().setLatitude(source.getLatitude());
 		simu.getUser().setLongitude(source.getLongitude());
@@ -373,6 +374,7 @@ public class UdpServer extends BaseServer {
     		address = packet.getAddress();
     		port = packet.getPort();
     		
+    		s.getUser().locationData(userOfMessage.hasLocationData());
     		s.getUser().setAltitude(userOfMessage.getAltitude());
     		s.getUser().setLatitude(userOfMessage.getLatitude());
     		s.getUser().setLongitude(userOfMessage.getLongitude());
