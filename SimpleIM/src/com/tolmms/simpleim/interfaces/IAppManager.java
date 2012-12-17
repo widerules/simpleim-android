@@ -29,8 +29,7 @@ public interface IAppManager {
 					UserIsAlreadyLoggedInException, 
 					NotEnoughResourcesException;
 	public void exit() 
-			throws UserNotLoggedInException, 
-					CannotLogOutException;
+			throws UserNotLoggedInException;
 	public void registerUser(String username, String password) 
 			throws CommunicationException,
 				UsernameAlreadyExistsException, 

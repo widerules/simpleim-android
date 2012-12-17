@@ -16,13 +16,13 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.tolmms.simpleim.communication.CommunicationException;
 import com.tolmms.simpleim.exceptions.NotEnoughResourcesException;
@@ -62,7 +62,8 @@ public class LoginActivity extends Activity {
             // Because it is running in our same process, we should never see this happen
 			
 			iMService = null;
-			Toast.makeText(LoginActivity.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
+			if (MainActivity.DEBUG)
+				Log.d("LoginActivity", "chiamato onServiceDisconnected");
 		}
 		
 		@Override
@@ -76,8 +77,7 @@ public class LoginActivity extends Activity {
 			iMService = ((IMService.IMBinder) service).getService();
 			
 			if (MainActivity.DEBUG)
-				Toast.makeText(LoginActivity.this, "chiamato onServiceConnected", Toast.LENGTH_SHORT).show();
-			
+				Log.d("LoginActivity", "chiamato onServiceConnected");
 			
 			// TODO bisogna mettere questo controllo in main activity forse
 			if (iMService.isUserLoggedIn()) {

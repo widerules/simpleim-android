@@ -3,9 +3,12 @@ package com.tolmms.simpleim.communication;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,7 +43,8 @@ import com.tolmms.simpleim.interfaces.ICommunication;
 public class Communication implements ICommunication {
 	HandleIncomingPackets udpListener = null;
 	
-	String serverIpString = "10.0.2.2";
+//	String serverIpString = "10.0.2.2";
+	String serverIpString = "192.168.1.7";
 	private int serverUdpPort = 4445;
 	private int serverUDPTimeout = 5 * 1000; //miliseconds
 	
@@ -59,6 +63,24 @@ public class Communication implements ICommunication {
 
 	public Communication(IAppManagerForComm service) {
 		this.service = service;
+	}
+	
+	
+	private static String getLocalIpAddress() {
+	    try {
+	        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+	            NetworkInterface intf = en.nextElement();
+	            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+	                InetAddress inetAddress = enumIpAddr.nextElement();
+	                if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+	                    return inetAddress.getHostAddress();
+	                }
+	            }
+	        }
+	    } catch (SocketException ex) {
+	        ex.printStackTrace();
+	    }
+	    return null;
 	}
 
 	@Override
@@ -82,11 +104,17 @@ public class Communication implements ICommunication {
 		}
 		
 //		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
+		//TODO COME CAZZO FARE
+		String tempIp = getLocalIpAddress();
+		if (tempIp == null) 
+			tempIp = s.getLocalAddress().getHostAddress();
+			
 		
 		UserInfo tempInfo= null;
 		try {
-			tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
+			tempInfo = new UserInfo(username, tempIp, serviceUdpPort);
 		} catch (InvalidDataException e1) { /* cannot be here */ }
+		
 		
 		loginMessage = new LoginMessage(tempInfo, password);
 		
@@ -181,9 +209,6 @@ public class Communication implements ICommunication {
 		//TODO dire a tutti gli altri??? qui o dopo?
 		
 //		announceIAmOnline(listMessage.getUserList());
-		if (MainActivity.DEBUG)
-			Log.d("Login - communication - tempInfo", String.valueOf(tempInfo.getIp()) + ":" + String.valueOf(tempInfo.getPort()));
-		
 		
 		
 		service.setUserList(listMessage.getUserList());
@@ -191,7 +216,14 @@ public class Communication implements ICommunication {
 		tempInfo.setPort(login_message_answer.getUser().getPort());
 		tempInfo.setIP(login_message_answer.getUser().getIp());
 		
+		
+		if (MainActivity.DEBUG)
+			Log.d("Login - communication - tempInfo", String.valueOf(tempInfo.getIp()) + ":" + String.valueOf(tempInfo.getPort()));
+		
+		
 		return tempInfo;
+		
+		
 	}
 	
 	public void announceIAmOnline(UserInfo me, List<UserInfo> userList) {
@@ -356,6 +388,26 @@ public class Communication implements ICommunication {
 			
 		}
 		
+		/* send logout message also to server! */
+		DatagramPacket p = null;
+		try {
+			p = new DatagramPacket(lmXml.getBytes(), lmXml.getBytes().length, 
+												InetAddress.getByName(serverIpString),
+												serverUdpPort);
+		} catch (UnknownHostException e) {
+			s.close(); 
+			return true;
+		
+		}
+		
+		try {
+			s.send(p);
+		} catch (IOException e) {
+			/* if there's error... nothing to do */
+			s.close(); 
+			return true;
+		}
+		
 		s.close();
 		
 		return true;
@@ -365,7 +417,17 @@ public class Communication implements ICommunication {
 	public void sendMessage(MessageInfo mi) throws CannotSendBecauseOfWrongUserInfo {
 		CommunicationMessage m = new CommunicationMessage(mi);
 		
-		String mXml = m.toString();
+		String mXml = null;
+		try {
+			mXml = m.toXML();
+		} catch (ParserConfigurationException e1) {
+			/* cannot be here */
+			//TODO
+			throw new CannotSendBecauseOfWrongUserInfo();
+		} catch (TransformerException e1) {
+			/* cannot be here */
+			throw new CannotSendBecauseOfWrongUserInfo();
+		}
 		
 		DatagramPacket p;
 		try {
@@ -450,10 +512,24 @@ public class Communication implements ICommunication {
 		}
 		
 		DatagramPacket p;
+		
+		String address;
+		int port;
+		
+		/* if the userinfo destination is the server... then I must put the server's ip and port */
+		
+		if (destination.getUsername().equals(UserInfo.SERVER_USERNAME)) {
+			address = serverIpString;
+			port = serverUdpPort;
+		} else {
+			address = destination.getIp();
+			port = destination.getPort();
+		}
+		
 		try {
 			p = new DatagramPacket(uiamXml.getBytes(), uiamXml.getBytes().length, 
-												InetAddress.getByName(destination.getIp()),
-												destination.getPort());
+												InetAddress.getByName(address),
+												port);
 		} catch (UnknownHostException e) {
 			/* if there's error... nothing to do */
 			return;
@@ -527,8 +603,13 @@ public class Communication implements ICommunication {
 
 				if (outSocket.isClosed())
 					return;
+				
 				try {
 					outSocket.send(dp);
+					
+					if (MainActivity.DEBUG)
+						Log.d("HandleOutgoingPackets", "sent a packet to " + dp.getAddress().getHostAddress() + ":" + dp.getPort());
+					
 				} catch (IOException e) { }
 			}
 		}
@@ -647,6 +728,7 @@ public class Communication implements ICommunication {
 	 */
 	private void startListeningForMessages() throws SocketException {
 		incomingPackets = new LinkedBlockingQueue<DatagramPacket>();
+		outgoingPackets = new LinkedBlockingQueue<DatagramPacket>();
 		handleIncomingPackets = new HandleIncomingPackets(serviceUdpPort);
 		handleRequests = new HandleRequests();
 		handlingOutgoingPackets = new HandleOutgoingPackets();

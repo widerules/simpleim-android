@@ -12,8 +12,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,6 +38,7 @@ import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;
 import com.tolmms.simpleim.storage.TemporaryStorage;
+import com.tolmms.simpleim.tools.Tools;
 
 public class LoggedUser extends Activity {
 	Vector<UserInfo> user_list;
@@ -53,7 +57,8 @@ public class LoggedUser extends Activity {
             // Because it is running in our same process, we should never see this happen
 			
 			iMService = null;
-			Toast.makeText(LoggedUser.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
+			if (MainActivity.DEBUG)
+				Log.d("LoggedUser", "chiamato onServiceDisconnected");
 		}
 		
 		@Override
@@ -67,7 +72,7 @@ public class LoggedUser extends Activity {
 			iMService = ((IMService.IMBinder) service).getService();
 			
 			if (MainActivity.DEBUG)
-				Toast.makeText(LoggedUser.this, "chiamato onServiceConnected", Toast.LENGTH_SHORT).show();
+				Log.d("LoggedUser", "chiamato onServiceConnected");
 			
 			//TODO mettere per da vero!
 //			if (!iMService.isUserLoggedIn()) {
@@ -275,17 +280,45 @@ public class LoggedUser extends Activity {
 	    // Handle item selection
 	    switch (item.getItemId()) {
 	    case R.id.menu_logout:
-	        try {
-				iMService.exit();
-			} catch (UserNotLoggedInException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CannotLogOutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	        startActivity(new Intent(LoggedUser.this, MainActivity.class));
-	        LoggedUser.this.finish();
+			Thread sendMessageTh = new Thread() {
+				private Handler h = new Handler();
+				private String errorMsg = "";
+
+				@Override
+				public void run() {
+					Looper.prepare(); // TODO mi da errore se lo cancello
+					
+					try {
+						iMService.exit();
+					} catch (UserNotLoggedInException e) {
+						errorMsg = getString(R.string.it_error_user_not_logged_in);
+						if (MainActivity.DEBUG)
+							errorMsg += ": " + e.getMessage();
+						//unlikely to be here!!! but.. i put the error handling logic
+					}
+
+					if (!errorMsg.isEmpty())
+						h.post(new Runnable() {
+
+							@Override
+							public void run() {
+								Tools.showMyDialog(errorMsg, LoggedUser.this);
+							}
+						});
+					else
+						h.post(new Runnable() {
+
+							@Override
+							public void run() {
+								startActivity(new Intent(LoggedUser.this, MainActivity.class));
+								LoggedUser.this.finish();
+							}
+						});
+				}
+
+			};
+			
+			sendMessageTh.start();
 	        return true;
 	    default:
 	        return super.onOptionsItemSelected(item);
