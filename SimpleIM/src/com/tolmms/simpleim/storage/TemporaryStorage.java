@@ -32,7 +32,7 @@ public class TemporaryStorage {
 	
 	static {
 		try {
-			myInfo = new UserInfo(null, null, UserInfo.MIN_ALLOWED_PORT);
+			myInfo = new UserInfo("", "", UserInfo.MIN_ALLOWED_PORT);
 		} catch (InvalidDataException e) { Log.d("TemporaryStorage - myInfo", "cannot be here - creating new instance of UserInfo"); }
 		
 		

@@ -10,7 +10,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,7 +32,6 @@ import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.datatypes.MessageRepresentation;
 import com.tolmms.simpleim.datatypes.UserInfo;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
-import com.tolmms.simpleim.exceptions.CannotLogOutException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.exceptions.UserToChatWithIsNotRecognizedException;
 import com.tolmms.simpleim.interfaces.IAppManager;
@@ -69,14 +70,10 @@ public class ChatActivity extends Activity {
             // unexpectedly disconnected - that is, its process crashed.
             // Because it is running in our same process, we should never see this happen
 			
-			
-			iMService.unsetCurrentUserChat();
-			
 			iMService = null;
 			
 			if (MainActivity.DEBUG)
-				Toast.makeText(ChatActivity.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
-			
+				Log.d("ChatActivity", "chiamato onServiceDisconnected");
 			
 		}
 		
@@ -91,9 +88,7 @@ public class ChatActivity extends Activity {
 			iMService = ((IMService.IMBinder) service).getService();
 			
 			if (MainActivity.DEBUG)
-				Toast.makeText(ChatActivity.this, "chiamato onServiceConnected", Toast.LENGTH_SHORT).show();
-			
-			
+				Log.d("ChatActivity", "chiamato onServiceConnected");
 			
 			//TODO mettere per da vero!
 //			if (!iMService.isUserLoggedIn()) {
@@ -173,7 +168,7 @@ public class ChatActivity extends Activity {
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(statusChangesMessageReceiver);
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(messagesMessageReceiver);
 		
-//		iMService.unsetCurrentUserChat();
+		iMService.unsetCurrentUserChat();
 		
 		super.onPause();
 	}
@@ -193,8 +188,6 @@ public class ChatActivity extends Activity {
 		
 		updateChatView();
 		updateUserStatus(TemporaryStorage.getUserInfoByUsername(username_to_chat).getStatus());
-		
-//		iMService.setCurrentUserChat(username_to_chat);
 		
 		super.onResume();
 	}
@@ -219,6 +212,7 @@ public class ChatActivity extends Activity {
 		
 		user_messages = TemporaryStorage.getMessagesByUsername(username_to_chat);
 		
+		
 		((TextView) findViewById(R.id.tv_friend_username_chat)).setText(username_to_chat);
 		iv_status_user = (ImageView) findViewById(R.id.iv_user_status_chat);
 		l = (ListView) findViewById(R.id.lv_chat_list);
@@ -229,7 +223,7 @@ public class ChatActivity extends Activity {
 		l.setSmoothScrollbarEnabled(true);
 		
 		
-		Log.d("aaaaaaaaaaaaa", TemporaryStorage.getUserInfoByUsername(username_to_chat).toString());
+		Log.d("entering ChatActivity - ", TemporaryStorage.getUserInfoByUsername(username_to_chat).toString());
 		
 		updateUserStatus(TemporaryStorage.getUserInfoByUsername(username_to_chat).getStatus());
 		
@@ -254,29 +248,61 @@ public class ChatActivity extends Activity {
 					return;
 				}
 				
-				String the_message = tv_send_msg.getText().toString().trim();
-				
-				if (the_message.isEmpty()) {
+				if (tv_send_msg.getText().toString().trim().isEmpty()) {
 					Toast.makeText(ChatActivity.this, getString(R.string.it_error_cannot_send_empty_message), Toast.LENGTH_SHORT).show();
 					return;
 				}
 				
-				try {
-					iMService.sendMessage(username_to_chat, the_message);
-				} catch (UserNotLoggedInException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (UserToChatWithIsNotRecognizedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (CannotSendBecauseOfWrongUserInfo e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvalidDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				tv_send_msg.setText("");
+				Thread sendMessageTh = new Thread() {
+					private Handler h = new Handler();
+					private String errorMsg = "";
+					
+					@Override
+					public void run() {
+						Looper.prepare(); //TODO mi da errore se lo cancello quando cerco di loggarmi la seconda volta (dopo essermi sloggato)
+						String the_message = tv_send_msg.getText().toString().trim();
+
+						h.post(new Runnable() {
+							@Override
+							public void run() {
+								tv_send_msg.setText("");
+								
+							}
+						});
+						
+						try {
+							iMService.sendMessage(username_to_chat, the_message);
+						} catch (UserNotLoggedInException e) {
+							errorMsg = getString(R.string.it_error_user_not_logged_in);
+							if (MainActivity.DEBUG)
+								errorMsg += ": " + e.getMessage();
+						} catch (UserToChatWithIsNotRecognizedException e) {
+							errorMsg = getString(R.string.it_error_user_to_chat_with_is_not_recognized);
+							if (MainActivity.DEBUG)
+								errorMsg += ": " + e.getMessage();
+						} catch (CannotSendBecauseOfWrongUserInfo e) {
+							errorMsg = getString(R.string.it_error_user_to_chat_with_has_incorect_contact_data);
+							if (MainActivity.DEBUG)
+								errorMsg += ": " + e.getMessage();
+						} catch (InvalidDataException e) {
+							errorMsg = getString(R.string.it_error_empty_message_cannot_be_sent);
+							if (MainActivity.DEBUG)
+								errorMsg += ": " + e.getMessage();
+						}
+						
+						if (!errorMsg.isEmpty())			
+							h.post(new Runnable() {
+								
+								@Override
+								public void run() {
+									Tools.showMyDialog(errorMsg, ChatActivity.this);
+								}
+							});						
+					}
+					
+				};
+				
+				sendMessageTh.start();				
 			}
 		});
 	}
@@ -301,7 +327,7 @@ public class ChatActivity extends Activity {
 	        updateUserStatus(newUserState);
 	        
 	        if (MainActivity.DEBUG)
-	        	Toast.makeText(ChatActivity.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
+	        	Log.d("ChatActivity", "received broadcasted intent!: "+action);
 	        
 	    }
 	};
@@ -327,7 +353,7 @@ public class ChatActivity extends Activity {
 	        
 	        
 	        if (MainActivity.DEBUG)
-	        	Toast.makeText(ChatActivity.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
+	        	Log.d("ChatActivity", "received broadcasted intent!: "+action);
 	        
 	    }
 	};
@@ -360,20 +386,48 @@ public class ChatActivity extends Activity {
 	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    // Handle item selection
+	    // Handle item selection	
 	    switch (item.getItemId()) {
 	    case R.id.menu_logout:
-	        try {
-				iMService.exit();
-			} catch (UserNotLoggedInException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CannotLogOutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	        startActivity(new Intent(ChatActivity.this, MainActivity.class));
-	        ChatActivity.this.finish();
+			Thread sendMessageTh = new Thread() {
+				private Handler h = new Handler();
+				private String errorMsg = "";
+
+				@Override
+				public void run() {
+					Looper.prepare(); // TODO mi da errore se lo cancello
+					
+					try {
+						iMService.exit();
+					} catch (UserNotLoggedInException e) {
+						errorMsg = getString(R.string.it_error_user_not_logged_in);
+						if (MainActivity.DEBUG)
+							errorMsg += ": " + e.getMessage();
+						//unlikely to be here!!! but.. i put the error handling logic
+					}
+
+					if (!errorMsg.isEmpty())
+						h.post(new Runnable() {
+
+							@Override
+							public void run() {
+								Tools.showMyDialog(errorMsg, ChatActivity.this);
+							}
+						});
+					else
+						h.post(new Runnable() {
+
+							@Override
+							public void run() {
+								startActivity(new Intent(ChatActivity.this, MainActivity.class));
+								ChatActivity.this.finish();
+							}
+						});
+				}
+
+			};
+			
+			sendMessageTh.start();
 	        return true;
 	    default:
 	        return super.onOptionsItemSelected(item);

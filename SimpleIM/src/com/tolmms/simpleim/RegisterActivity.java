@@ -17,13 +17,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.tolmms.simpleim.communication.CommunicationException;
 import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
@@ -62,8 +62,9 @@ public class RegisterActivity extends Activity {
 	            // Because it is running in our same process, we should never see this happen
 				
 				iMService = null;
+				
 				if (MainActivity.DEBUG)
-					Toast.makeText(RegisterActivity.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
+					Log.d("RegisterActivity", "chiamato onServiceDisconnected");
 			}
 			
 			@Override
@@ -77,8 +78,7 @@ public class RegisterActivity extends Activity {
 				iMService = ((IMService.IMBinder) service).getService();
 				
 				if (MainActivity.DEBUG)
-					Toast.makeText(RegisterActivity.this, "chiamato onServiceConnected", Toast.LENGTH_SHORT).show();
-				
+					Log.d("RegisterActivity", "chiamato onServiceConnected");
 				
 				// TODO bisogna mettere questo controllo in main activity forse
 				if (iMService.isUserLoggedIn()) {

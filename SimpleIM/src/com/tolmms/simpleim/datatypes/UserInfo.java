@@ -7,6 +7,8 @@ import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
 import com.tolmms.simpleim.datatypes.exceptions.XmlMessageReprException;
 
 public class UserInfo {
+	public static final String SERVER_USERNAME = "server";			
+			
 	public static final String ONLINE_STATUS = "online";
 	public static final String OFFLINE_STATUS = "offline";
 	
@@ -117,7 +119,7 @@ public class UserInfo {
 	public void clearInfos() {
 		this.username = "";
 		this.ip = "";
-		this.port = 0;
+		this.port = UserInfo.MIN_ALLOWED_PORT;
 		setOffline();
 	}
 

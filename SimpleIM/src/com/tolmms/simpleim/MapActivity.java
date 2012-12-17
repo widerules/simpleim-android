@@ -17,20 +17,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.tolmms.simpleim.datatypes.UserInfo;
-import com.tolmms.simpleim.exceptions.CannotLogOutException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;
 import com.tolmms.simpleim.storage.TemporaryStorage;
+import com.tolmms.simpleim.tools.Tools;
 
 public class MapActivity extends Activity {
 	public static final long SECONDS_TO_UPDATE_THE_MAP = 30 * 1000; //miliseconds
@@ -60,8 +65,7 @@ public class MapActivity extends Activity {
 			iMService = null;
 			
 			if (MainActivity.DEBUG)
-				Toast.makeText(MapActivity.this, "ERROR. service disconnected", Toast.LENGTH_SHORT).show();
-			
+				Log.d("MapActivity", "chiamato onServiceDisconnected");
 			
 		}
 		
@@ -76,8 +80,7 @@ public class MapActivity extends Activity {
 			iMService = ((IMService.IMBinder) service).getService();
 			
 			if (MainActivity.DEBUG)
-				Toast.makeText(MapActivity.this, "chiamato onServiceConnected", Toast.LENGTH_SHORT).show();
-			
+				Log.d("MapActivity", "chiamato onServiceConnected");
 			
 			
 			//TODO mettere per da vero!
@@ -148,14 +151,13 @@ public class MapActivity extends Activity {
 				updateOthersPositionOnTheMap();
 				
 				if (MainActivity.DEBUG)
-					Toast.makeText(MapActivity.this, "fatto update", Toast.LENGTH_SHORT).show();
+					Log.d("MapActivity", "made update of the map");
 				
 				handler.postDelayed(this, SECONDS_TO_UPDATE_THE_MAP);
 		    }
 		};
 		
 		runnable.run();
-		
 		
 	}
 	
@@ -192,11 +194,11 @@ public class MapActivity extends Activity {
 	private void updateMyPositionOnTheMap() {
 		if (TemporaryStorage.myInfo == null)
 			return;
-		GeoPoint myPos = new GeoPoint(TemporaryStorage.myInfo.getLatitude(), TemporaryStorage.myInfo.getLongitude());
+		GeoPoint myPos = new GeoPoint(TemporaryStorage.myInfo.getLatitude(), TemporaryStorage.myInfo.getLongitude(), TemporaryStorage.myInfo.getAltitude());
 		
 		myPositionOverlay.removeAllItems();
 		
-		myPositionOverlay.addItem(new OverlayItem(TemporaryStorage.myInfo.getUsername(), "self", myPos));
+		myPositionOverlay.addItem(new OverlayItem(getString(R.string.it_chat_self_name), getString(R.string.it_chat_self_name), myPos));
 		
 		mMapView.getOverlays().set(0, myPositionOverlay);
 		mMapView.invalidate();
@@ -231,8 +233,7 @@ public class MapActivity extends Activity {
 			public boolean onItemSingleTapUp(final int index, final OverlayItem item) {
 				if (item == null)
 					return false;
-				Toast.makeText(
-						MapActivity.this, "Item '" + item.mTitle + "' (index=" + index + ") got single tapped up", Toast.LENGTH_LONG).show();
+				Toast.makeText(MapActivity.this, getString(R.string.it_chat_self_name), Toast.LENGTH_SHORT).show();
 
 				return true; // We 'handled' this event.
 			}
@@ -241,7 +242,7 @@ public class MapActivity extends Activity {
 			public boolean onItemLongPress(final int index, final OverlayItem item) {
 				if (item == null)
 					return false;
-				Toast.makeText(MapActivity.this, "Item '" + item.mTitle + "' (index=" + index + ") got long pressed", Toast.LENGTH_LONG).show();
+//				Toast.makeText(MapActivity.this, "Item '" + item.mTitle + "' (index=" + index + ") got long pressed", Toast.LENGTH_LONG).show();
 				
 				return false;
 			}
@@ -258,7 +259,7 @@ public class MapActivity extends Activity {
 				if (item == null)
 					return false;
 				
-				Toast.makeText(MapActivity.this, "Item '" + item.mTitle + "' (index=" + index + ") got single tapped up", Toast.LENGTH_LONG).show();
+				Toast.makeText(MapActivity.this, item.mTitle, Toast.LENGTH_SHORT).show();
 
 				return true; // We 'handled' this event.
 			}
@@ -268,7 +269,7 @@ public class MapActivity extends Activity {
 				if (item == null)
 					return false;
 				
-				Toast.makeText(MapActivity.this, "Item '" + item.mTitle + "' (index=" + index + ") got long pressed", Toast.LENGTH_LONG).show();
+//				Toast.makeText(MapActivity.this, "Item '" + item.mTitle + "' (index=" + index + ") got long pressed", Toast.LENGTH_LONG).show();
 				
 				return false;
 			}
@@ -294,7 +295,7 @@ public class MapActivity extends Activity {
 	        updateMyPositionOnTheMap();
 	        
 	        if (MainActivity.DEBUG)
-	        	Toast.makeText(MapActivity.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
+	        	Log.d("MapActivity", "received broadcasted intent!: "+action);
 	        
 	    }
 	};
@@ -311,7 +312,7 @@ public class MapActivity extends Activity {
 	        updateOthersPositionOnTheMap();
 	        
 	        if (MainActivity.DEBUG)
-	        	Toast.makeText(MapActivity.this, "received broadcasted intent!: "+action, Toast.LENGTH_LONG).show();
+	        	Log.d("MapActivity", "received broadcasted intent!: "+action);
 	        
 	    }
 	};
@@ -327,17 +328,45 @@ public class MapActivity extends Activity {
 	    // Handle item selection
 	    switch (item.getItemId()) {
 	    case R.id.menu_logout:
-	        try {
-				iMService.exit();
-			} catch (UserNotLoggedInException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CannotLogOutException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	        startActivity(new Intent(MapActivity.this, MainActivity.class));
-	        MapActivity.this.finish();
+	    	Thread sendMessageTh = new Thread() {
+				private Handler h = new Handler();
+				private String errorMsg = "";
+
+				@Override
+				public void run() {
+					Looper.prepare(); // TODO mi da errore se lo cancello
+					
+					try {
+						iMService.exit();
+					} catch (UserNotLoggedInException e) {
+						errorMsg = getString(R.string.it_error_user_not_logged_in);
+						if (MainActivity.DEBUG)
+							errorMsg += ": " + e.getMessage();
+						//unlikely to be here!!! but.. i put the error handling logic
+					}
+
+					if (!errorMsg.isEmpty())
+						h.post(new Runnable() {
+
+							@Override
+							public void run() {
+								Tools.showMyDialog(errorMsg, MapActivity.this);
+							}
+						});
+					else
+						h.post(new Runnable() {
+
+							@Override
+							public void run() {
+								startActivity(new Intent(MapActivity.this, MainActivity.class));
+								MapActivity.this.finish();
+							}
+						});
+				}
+
+			};
+			
+			sendMessageTh.start();
 	        return true;
 	    default:
 	        return super.onOptionsItemSelected(item);
