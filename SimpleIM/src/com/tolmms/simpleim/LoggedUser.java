@@ -33,7 +33,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tolmms.simpleim.datatypes.UserInfo;
-import com.tolmms.simpleim.exceptions.CannotLogOutException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
 import com.tolmms.simpleim.interfaces.IAppManager;
 import com.tolmms.simpleim.services.IMService;

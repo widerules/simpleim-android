@@ -5,7 +5,6 @@ import java.net.UnknownHostException;
 import com.tolmms.simpleim.communication.CannotSendBecauseOfWrongUserInfo;
 import com.tolmms.simpleim.communication.CommunicationException;
 import com.tolmms.simpleim.datatypes.exceptions.InvalidDataException;
-import com.tolmms.simpleim.exceptions.CannotLogOutException;
 import com.tolmms.simpleim.exceptions.NotEnoughResourcesException;
 import com.tolmms.simpleim.exceptions.UserIsAlreadyLoggedInException;
 import com.tolmms.simpleim.exceptions.UserNotLoggedInException;
