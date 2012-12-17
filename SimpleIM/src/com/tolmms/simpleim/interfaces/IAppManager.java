@@ -21,34 +21,49 @@ public interface IAppManager {
 	public static String INTENT_ACTION_USER_POSITION_CHANGED = "com.tolmms.simpleim.USER_POSITION_CHANGED";
 	public static String INTENT_ACTION_OTHER_POSITION_CHANGED = "com.tolmms.simpleim.OTHER_POSITION_CHANGED";
 	
+	public static final int SECONDS_TO_CHECK_SENT_MESSAGES = 2;
+	public static final int NUMBER_MESSAGE_SENT_RETRIES = 3;
+	
+	public static final int SECONDS_TO_CHECK_USER_INFO = 15;
+	public static final int NUMBER_USER_INFO_REQUEST_RETRIES = 3;
+	
+	
 	public void loginUser(String username, String password) 
 			throws UsernameOrPasswordException, 
 					UnknownHostException, 
 					CommunicationException, 
 					UserIsAlreadyLoggedInException, 
 					NotEnoughResourcesException;
+	
 	public void exit() 
 			throws UserNotLoggedInException;
+	
 	public void registerUser(String username, String password) 
 			throws CommunicationException,
 				UsernameAlreadyExistsException, 
 				UnknownHostException, 
 				UserIsAlreadyLoggedInException;
+	
 	public void sendMessage(String username_to_chat, String the_message) 
 			throws UserNotLoggedInException, 
 					UserToChatWithIsNotRecognizedException, 
 					CannotSendBecauseOfWrongUserInfo, 
 					InvalidDataException;
 	
+	public boolean sendMessageToAll(String msg);
 	
 
 	public boolean isUserLoggedIn();
 	public boolean isNetworkConnected();
 	
+	/* stuff for chat */
 	public void unsetCurrentUserChat();
 	public void setCurrentUserChat(String username_to_chat);
 	
-	public void sendMessageToAll(String msg);
-	
-	public void viewingMap(boolean b);	
+	/* stuff for map */
+	public void activateMap(int my_rate, int others_rate);
+	public void deactivateMap();
+	public boolean isMapActivated();
+	public int getMyRefreshTime();
+	public int getOthersRefreshTime();	
 }

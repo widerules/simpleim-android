@@ -25,6 +25,7 @@ public class MessageXMLTags {
 	public static final String LATITUDE_TAG = "latitude";
 	public static final String LONGITUDE_TAG = "longitude";
 	public static final String ALTITUDE_TAG = "altitude";
+	public static final String LOCATION_DATA_TAG = "location_data";
 	
 	public static final String LOGIN_USER_NUMBER_TAG = "number";
 	public static final String REGISTER_USER_ANSWER_TAG = "answer";

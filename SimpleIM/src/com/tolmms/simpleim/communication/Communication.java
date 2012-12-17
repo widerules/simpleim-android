@@ -3,12 +3,9 @@ package com.tolmms.simpleim.communication;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,8 +38,9 @@ import com.tolmms.simpleim.interfaces.IAppManagerForComm;
 import com.tolmms.simpleim.interfaces.ICommunication;
 
 public class Communication implements ICommunication {
-	HandleIncomingPackets udpListener = null;
-	
+/*
+ * be aware that with loopback net interface it does not sends/recieves messages :(
+ */
 //	String serverIpString = "10.0.2.2";
 	String serverIpString = "192.168.1.7";
 	private int serverUdpPort = 4445;
@@ -52,7 +50,6 @@ public class Communication implements ICommunication {
 	int UDP_BUFFER_LEN = 10 * 1024; // 10 Kbytes
 	
 	IAppManagerForComm service = null;
-
 	
 	BlockingQueue<DatagramPacket> outgoingPackets = null;
 	BlockingQueue<DatagramPacket> incomingPackets = null;
@@ -66,25 +63,13 @@ public class Communication implements ICommunication {
 	}
 	
 	
-	private static String getLocalIpAddress() {
-	    try {
-	        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-	            NetworkInterface intf = en.nextElement();
-	            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-	                InetAddress inetAddress = enumIpAddr.nextElement();
-	                if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
-	                    return inetAddress.getHostAddress();
-	                }
-	            }
-	        }
-	    } catch (SocketException ex) {
-	        ex.printStackTrace();
-	    }
-	    return null;
-	}
-
+	/* security: must be secure that I communicate only with server! */
 	@Override
-	public UserInfo login(String username, String password) throws UsernameOrPasswordException, CommunicationException, UnknownHostException, UnableToStartSockets {
+	public UserInfo login(String username, String password) 
+			throws UsernameOrPasswordException, 
+					CommunicationException, 
+					UnknownHostException, 
+					UnableToStartSockets {
 		DatagramSocket s = null;
 		DatagramPacket packet = null;
 		byte[] buf = null;
@@ -103,16 +88,9 @@ public class Communication implements ICommunication {
 			throw new CommunicationException("opening the datagram socket");
 		}
 		
-//		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
-		//TODO COME CAZZO FARE
-		String tempIp = getLocalIpAddress();
-		if (tempIp == null) 
-			tempIp = s.getLocalAddress().getHostAddress();
-			
-		
 		UserInfo tempInfo= null;
 		try {
-			tempInfo = new UserInfo(username, tempIp, serviceUdpPort);
+			tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
 		} catch (InvalidDataException e1) { /* cannot be here */ }
 		
 		
@@ -160,6 +138,14 @@ public class Communication implements ICommunication {
 				s.close();
 				throw new UsernameOrPasswordException();
 			}
+			
+			if (!login_message_answer.getUser().getUsername().equals(username)) {
+				if (MainActivity.DEBUG)
+					Log.d("Login - got the first answer", "Username is not mine!!");
+				s.close();
+				throw new CommunicationException("Username is not mine!!");
+			}
+				
 		} catch (XmlMessageReprException e) {
 			s.close();
 			throw new CommunicationException("reciving the answer of login XmlMessageReprException - " + answer);
@@ -202,13 +188,9 @@ public class Communication implements ICommunication {
 			if (MainActivity.DEBUG)
 				Log.d("Login - communication - starting sockets", "errore in communication");
 			
-			//TODO chiudere tutte le comunicazioni
+			stopListeningForMessages();
 			throw new UnableToStartSockets("cannot start the datagram sockets...");
 		}
-		
-		//TODO dire a tutti gli altri??? qui o dopo?
-		
-//		announceIAmOnline(listMessage.getUserList());
 		
 		
 		service.setUserList(listMessage.getUserList());
@@ -222,8 +204,6 @@ public class Communication implements ICommunication {
 		
 		
 		return tempInfo;
-		
-		
 	}
 	
 	public void announceIAmOnline(UserInfo me, List<UserInfo> userList) {
@@ -260,9 +240,12 @@ public class Communication implements ICommunication {
 		}		
 	}
 	
-	//TODO - devo assicurarmi che con chi comunico sia veramente il server... lol
+	/* security: must be secure that I communicate only with server! */
 	@Override
-	public void register(String username, String password) throws CommunicationException, UsernameAlreadyExistsException, UnknownHostException {
+	public void register(String username, String password) 
+			throws CommunicationException, 
+					UsernameAlreadyExistsException, 
+					UnknownHostException {
 		DatagramSocket s = null;
 		
 		DatagramPacket packet;
@@ -280,9 +263,6 @@ public class Communication implements ICommunication {
 			throw new CommunicationException("opening the datagram socket");
 		}
 
-		// TODO da mettere al posto di s.connect(,) mettere quella con un solo paramentro...
-//		s.connect(InetAddress.getByName(serverIpString), serverUdpPort);
-		
 		UserInfo tempInfo= null;
 		try {
 			tempInfo = new UserInfo(username, s.getLocalAddress().getHostAddress(), serviceUdpPort);
@@ -343,7 +323,7 @@ public class Communication implements ICommunication {
 		s.close();
 	}
 
-	public boolean logout(UserInfo source, List<UserInfo> userList) {		
+	public void logout(UserInfo source, List<UserInfo> userList) {		
 		stopListeningForMessages();
 		
 		LogoutMessage lm = new LogoutMessage(source);
@@ -356,14 +336,14 @@ public class Communication implements ICommunication {
 		}
 		
 		if (lmXml == null)
-			return false; //OOPS
+			return; //OOPS
 		
 		DatagramSocket s;
 		
 		try {
 			s = new DatagramSocket();
 		} catch (SocketException e1) {
-			return false;
+			return;
 		}
 		
 		for (UserInfo ui : userList) {
@@ -396,7 +376,7 @@ public class Communication implements ICommunication {
 												serverUdpPort);
 		} catch (UnknownHostException e) {
 			s.close(); 
-			return true;
+			return;
 		
 		}
 		
@@ -405,16 +385,15 @@ public class Communication implements ICommunication {
 		} catch (IOException e) {
 			/* if there's error... nothing to do */
 			s.close(); 
-			return true;
+			return;
 		}
 		
 		s.close();
-		
-		return true;
 	}
 
 	@Override
-	public void sendMessage(MessageInfo mi) throws CannotSendBecauseOfWrongUserInfo {
+	public void sendMessage(MessageInfo mi) 
+			throws CannotSendBecauseOfWrongUserInfo {
 		CommunicationMessage m = new CommunicationMessage(mi);
 		
 		String mXml = null;
@@ -422,7 +401,6 @@ public class Communication implements ICommunication {
 			mXml = m.toXML();
 		} catch (ParserConfigurationException e1) {
 			/* cannot be here */
-			//TODO
 			throw new CannotSendBecauseOfWrongUserInfo();
 		} catch (TransformerException e1) {
 			/* cannot be here */
@@ -516,8 +494,10 @@ public class Communication implements ICommunication {
 		String address;
 		int port;
 		
-		/* if the userinfo destination is the server... then I must put the server's ip and port */
-		
+		/* ATTENTION:
+		 * if the userinfo destination is the server... then I must put the 
+		 * server's ip and port 
+		 */
 		if (destination.getUsername().equals(UserInfo.SERVER_USERNAME)) {
 			address = serverIpString;
 			port = serverUdpPort;
@@ -554,9 +534,6 @@ public class Communication implements ICommunication {
 				byte[] buffer = new byte[UDP_BUFFER_LEN];
 				dp = new DatagramPacket(buffer, buffer.length);
 
-				if (MainActivity.DEBUG)
-					Log.d("Communication - ", "wayting for a packet");
-
 				if (inSocket.isClosed())
 					return;
 				
@@ -565,7 +542,7 @@ public class Communication implements ICommunication {
 				} catch (IOException e) { }
 
 				if (MainActivity.DEBUG)
-					Log.d("Communication - ", "recieved a packet");
+					Log.d("Communication - HandleIncomingPackets", "recieved a packet");
 
 				incomingPackets.add(dp);
 			}
@@ -636,10 +613,6 @@ public class Communication implements ICommunication {
 				
 				String the_msg = new String(dp.getData(), 0, dp.getLength());
 				
-				if (MainActivity.DEBUG) {
-					Log.d("HandleRequests - message received", the_msg);
-				}
-				
 				String message_type = null;
 				try {
 					message_type = Procedures.getMessageType(the_msg);
@@ -657,9 +630,10 @@ public class Communication implements ICommunication {
 					} catch (XmlMessageReprException e) { 
 						continue;
 					}
+					if (!service.isForCurrentUser(cm.getMessageInfo().getDestination()))
+						continue;
 					
 					service.recievedMessage(cm.getMessageInfo());
-					
 				} else if (Procedures.isLogoutMessage(message_type)) {
 					LogoutMessage solm = null;
 					try {
@@ -669,7 +643,6 @@ public class Communication implements ICommunication {
 					}
 					
 					service.userLoggedOut(solm.getSource());
-					
 				} else if (Procedures.isSomeOneLoginMessage(message_type)) {
 					SomeOneLoginMessage solm = null;
 					
@@ -690,7 +663,6 @@ public class Communication implements ICommunication {
 					}
 					
 					service.receivedMessageAnswer(cma.getUser(), cma.getMessageHashAck());
-					
 				} else if (Procedures.isUserInfoRequestMessage(message_type)) {
 					UserInfoRequestMessage uirm = null;
 					
@@ -713,9 +685,6 @@ public class Communication implements ICommunication {
 					service.receivedUserInfoAnswer(uiam.getSource());
 					
 				}
-				
-				
-				//do stuff
 			}
 		}
 		public void stopHandleMessages() {

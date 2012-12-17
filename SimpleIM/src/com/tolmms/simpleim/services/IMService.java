@@ -64,18 +64,22 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	private Intent userStateChange = null;	
 	
 	private String currentUserChat = "";
-//	private boolean viewingMap = false;
 	
 	private boolean isLogged = false;
 	
-	public static final int SECONDS_TO_CHECK_SENT_MESSAGES = 2; // 2 seconds
-
-	public static final int SECONDS_TO_CHECK_USER_INFO = 15; // 30 seconds
-	public static final int NUMBER_USER_INFO_REQUEST_RETRIES = 3;
+	/* stuff for map */
+	boolean isMapActivated = false;
+	int my_location_refresh_rate = 10;		//Seconds
+	int others_location_refresh_rate = 15;	//Seconds
 	
 
-	Vector<MessageRepresentation> sentMessagesWaitingForAnswer = new Vector<MessageRepresentation>();
-	Vector<UserInfoRepr> userInfoReprs = new Vector<UserInfoRepr>();
+	Handler handler = null;
+	
+	MessageAckManager msgAckManager = null;
+	Vector<MessageRepresentation> sentMessagesWaitingForAnswer = null;
+	
+	UserInfoRequestManager userInfoRequestManager = null;
+	Vector<UserInfoRepr> userInfoReprs = null;
 	
 	/* 
 	 * *************************************************************************
@@ -100,15 +104,13 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	
 	@Override
 	public void onDestroy() {
-		//TODO da fare il logout
+		try {
+			exit();
+		} catch (UserNotLoggedInException e) { }
+		
 		super.onDestroy();
 	}
 	
-	
-	Handler handler;
-	Runnable msgAckManager;
-	Runnable userInfoRequestManager;
-		
 	@Override
 	public void onCreate() {
 		notifManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
@@ -122,163 +124,14 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		TemporaryStorage.messages.clear();
 		
 		lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-		myLoclistener =  new LocationListener() {
-			@Override
-			public void onStatusChanged(String provider, int status, Bundle extras) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void onProviderEnabled(String provider) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void onProviderDisabled(String provider) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void onLocationChanged(Location location) {
-				TemporaryStorage.myInfo.setLatitude(location.getLatitude());
-				TemporaryStorage.myInfo.setLongitude(location.getLongitude());
-				TemporaryStorage.myInfo.setAltitude(location.getAltitude());
-				
-				if (MainActivity.DEBUG)
-					Log.d("ImService MyLocListener", "changed the location data");
-			}
-		};
+		myLoclistener =  new MyLocationListener();
 		
-		
-		
+		sentMessagesWaitingForAnswer = new Vector<MessageRepresentation>();
+		userInfoReprs = new Vector<UserInfoRepr>();
 		
 		handler = new Handler();
-		
-
-		msgAckManager = new Runnable() {
-		    public void run() {
-		    	//TODO è un poling...
-	    		Iterator<MessageRepresentation> it = sentMessagesWaitingForAnswer.iterator();
-	    		
-	    		while (it.hasNext()) {
-	    			MessageRepresentation mr = it.next();
-	    			if (mr.ackRecieved) {
-	    				it.remove();
-	    				if (MainActivity.DEBUG)
-	    					Log.d("IMService - msgAcqManager", "Message has received ack - not monitoring it anymore");
-	    				continue;
-	    			}
-	    			
-	    			if (mr.ackRecieved || mr.sentRetries > MessageRepresentation.MAX_RETRIES) {
-	    				it.remove();
-	    				if (MainActivity.DEBUG)
-	    					Log.d("IMService - msgAcqManager", "Message has reached maximum retries - not monitoring it anymore");
-	    				continue;
-	    			}
-    				Calendar c = Calendar.getInstance();
-					Date now = c.getTime();
-					
-					c.setTime(mr.getMessageInfo().getSentTime());
-					
-					c.add(Calendar.SECOND, SECONDS_TO_CHECK_SENT_MESSAGES * mr.sentRetries);
-					
-					if (now.after(c.getTime())) {
-						mr.sentRetries++;
-						try {
-							communication.sendMessage(mr.getMessageInfo());
-						} catch (CannotSendBecauseOfWrongUserInfo e) { /* it is not likely to be here */ }
-						it.remove();
-						
-	    				if (MainActivity.DEBUG)
-	    					Log.d("IMService - msgAcqManager", "Message has not rceived ack - trying to sed it again");
-					}
-	    		}
-	    		
-				handler.postDelayed(this, SECONDS_TO_CHECK_SENT_MESSAGES * 1000);
-		    }
-		};
-		
-		userInfoRequestManager = new Runnable() {
-			@Override
-			public void run() {
-				Calendar c = Calendar.getInstance();
-				Date now = c.getTime();
-				
-				for (UserInfoRepr uir : userInfoReprs) {
-					// now - last >= Seconds to check
-					// now >= last + seconds to check
-					
-					if (!uir.u.isOnline())
-						continue;
-					
-					c.setTime(uir.last_update);
-					c.add(Calendar.SECOND, SECONDS_TO_CHECK_USER_INFO * NUMBER_USER_INFO_REQUEST_RETRIES);
-					if (now.after(c.getTime())) {
-						userLoggedOut(uir.u);
-						
-						if (MainActivity.DEBUG)
-	    					Log.d("IMService - userInfoRequestManager", "set a user offline...");
-						
-						continue;
-					}
-					c.setTime(uir.last_update);
-					c.add(Calendar.SECOND, SECONDS_TO_CHECK_USER_INFO);
-					if (now.after(c.getTime())) {
-						communication.sendUserInfoRequest(TemporaryStorage.myInfo, uir.u);
-
-						if (MainActivity.DEBUG)
-	    					Log.d("IMService - userInfoRequestManager", "sent userinforequest...");
-					}
-					
-				}
-				
-				handler.postDelayed(this, SECONDS_TO_CHECK_USER_INFO * 1000);
-			}
-		};
-		
-		
-//		
-//		if (MainActivity.DEBUG) {
-//			Vector<UserInfo> user_list = TemporaryStorage.user_list;
-////			Vector<UserInfo> user_list = new Vector<UserInfo>();
-//			
-//			
-//			try {
-//				user_list.add(new UserInfo("prova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
-//				user_list.add(new UserInfo("arova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
-//				user_list.add(new UserInfo("prova2", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
-//				user_list.add(new UserInfo("aarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
-//				user_list.add(new UserInfo("aaaaarova1", "10.2.1.1", 2000, UserInfo.ONLINE_STATUS));
-//				user_list.add(new UserInfo("aaaaaaaaarova1", "10.2.1.1", 2000, UserInfo.OFFLINE_STATUS));
-//			} catch (InvalidDataException e) { /* cannot be here */ }
-//			
-//			TemporaryStorage.reorderUserList();
-//			
-//			LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
-//			
-//			
-//			LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
-//			
-//			
-//			// da mettere solo quando si fa il login
-//			UserInfo myInfo = null;
-//			
-//			try {
-//				myInfo = new UserInfo("artur", "10101", 10);
-//			} catch (InvalidDataException e) { /* cannot be here */ }
-//			
-//			TemporaryStorage.myInfo.setOnline();
-//			TemporaryStorage.myInfo.set(myInfo.getUsername(), myInfo.getIp(), myInfo.getPort());
-////			TemporaryStorage.user_list = user_list;
-//			
-////			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener);
-//		}
-		
-		
-				
+		msgAckManager = new MessageAckManager();
+		userInfoRequestManager = new UserInfoRequestManager();				
 	}
 	
 	
@@ -289,6 +142,115 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	 * *************************************************************************
 	 */
 	
+	private class MessageAckManager implements Runnable {
+		@Override
+		public void run() {
+			Iterator<MessageRepresentation> it = sentMessagesWaitingForAnswer.iterator();
+
+			while (it.hasNext()) {
+				MessageRepresentation mr = it.next();
+				if (mr.ackRecieved) {
+					it.remove();
+					if (MainActivity.DEBUG)
+						Log.d("IMService - msgAcqManager", "Message has received ack - not monitoring it anymore");
+					continue;
+				}
+
+				if (mr.sentRetries > NUMBER_MESSAGE_SENT_RETRIES) {
+					it.remove();
+					if (MainActivity.DEBUG)
+						Log.d("IMService - msgAcqManager", "Message has reached maximum retries - not monitoring it anymore");
+					notifyNewMessageToChatActivity(mr.getMessageInfo().getDestination().getUsername());
+					continue;
+				}
+
+				Calendar c = Calendar.getInstance();
+				Date now = c.getTime();
+
+				c.setTime(mr.getMessageInfo().getSentTime());
+				c.add(Calendar.SECOND, SECONDS_TO_CHECK_SENT_MESSAGES * mr.sentRetries);
+
+				if (now.after(c.getTime())) {
+					mr.sentRetries++;
+					try {
+						communication.sendMessage(mr.getMessageInfo());
+					} catch (CannotSendBecauseOfWrongUserInfo e) { /* it is not likely to be here */ }
+
+					if (MainActivity.DEBUG)
+						Log.d("IMService - msgAcqManager", "Message has not rceived ack - trying to sed it again");
+				}
+			}
+
+			handler.postDelayed(this, SECONDS_TO_CHECK_SENT_MESSAGES * 1000);
+		}
+	}
+	
+	private class UserInfoRequestManager implements Runnable {
+		@Override
+		public void run() {
+			Calendar c = Calendar.getInstance();
+			Date now = c.getTime();
+			
+			int seconds_to_check = SECONDS_TO_CHECK_USER_INFO;
+			if (isMapActivated)
+				seconds_to_check = Math.min(others_location_refresh_rate, SECONDS_TO_CHECK_USER_INFO);
+			
+			for (UserInfoRepr uir : userInfoReprs) {
+				// now - last >= Seconds to check
+				// now >= last + seconds to check
+				
+				if (!uir.u.isOnline())
+					continue;
+				
+				c.setTime(uir.last_update);
+				c.add(Calendar.SECOND, SECONDS_TO_CHECK_USER_INFO * NUMBER_USER_INFO_REQUEST_RETRIES);
+				if (now.after(c.getTime())) {
+					userLoggedOut(uir.u);
+					
+					if (MainActivity.DEBUG)
+    					Log.d("IMService - userInfoRequestManager", "set a user offline...");
+					
+					continue;
+				}
+				c.setTime(uir.last_update);
+				c.add(Calendar.SECOND, seconds_to_check);
+				if (now.after(c.getTime())) {
+					communication.sendUserInfoRequest(TemporaryStorage.myInfo, uir.u);
+
+					if (MainActivity.DEBUG)
+    					Log.d("IMService - userInfoRequestManager", "sent userinforequest...");
+				}
+				
+			}
+			
+			
+			handler.postDelayed(this, seconds_to_check * 1000);
+		}
+	}
+	
+	private class MyLocationListener implements LocationListener {
+		@Override
+		public void onStatusChanged(String provider, int status, Bundle extras) {				
+		}
+		
+		@Override
+		public void onProviderEnabled(String provider) {				
+		}
+		
+		@Override
+		public void onProviderDisabled(String provider) {				
+		}
+		
+		@Override
+		public void onLocationChanged(Location location) {
+			TemporaryStorage.myInfo.setLatitude(location.getLatitude());
+			TemporaryStorage.myInfo.setLongitude(location.getLongitude());
+			TemporaryStorage.myInfo.setAltitude(location.getAltitude());
+			
+			if (MainActivity.DEBUG)
+				Log.d("ImService MyLocListener", "changed the location data");
+		}
+	}
 	
 	/*
 	 * shows tray notification when needed
@@ -313,7 +275,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		
 		Notification n = builder.
 				setContentTitle(getString(R.string.it_notification_new_message_title)).
-				setContentText(getString(R.string.it_notification_new_message_text) + username_to_chat).
+				setContentText(getString(R.string.it_notification_new_message_text) + " " + username_to_chat).
 				setSmallIcon(R.drawable.ic_stat_new_message).
 				setAutoCancel(true).
 				build();
@@ -323,8 +285,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			notifManager.notify(username_to_chat.hashCode(), n);
 		
 		if (MainActivity.DEBUG)
-			Log.d("show notification if needed", "current: " + currentUserChat + "; username_to_chat: " + username_to_chat);
-	
+			Log.d("show notification if needed", "current: " + currentUserChat + "; username_to_chat: " + username_to_chat);	
 	}
 	
 	/*
@@ -336,6 +297,12 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			messageReceivedSent.putExtra(INTENT_ACTION_MESSAGES_RECEIVED_SENT_USERNAME_EXTRA, username_to_chat);
 			LocalBroadcastManager.getInstance(this).sendBroadcast(messageReceivedSent);
 		}
+	}
+	
+	private void notifyUserStateChanged(UserInfo u, String state) {
+		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_USERNAME_EXTRA, u.getUsername());
+		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA, state);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
 	}
 	
 
@@ -361,18 +328,14 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			myInfo = communication.login(username, password);
 		} catch (UnableToStartSockets e) {
 			throw new NotEnoughResourcesException(e.getMessage());
-		}	
+		}
 		
-		//TODO assicurarmi che la risposta di myInfo sia effettivamente mia
-		// 		cioè che myInfo.username == username
 		TemporaryStorage.myInfo.setOnline();
 		TemporaryStorage.myInfo.set(username, myInfo.getIp(), myInfo.getPort());
-
-		
-		lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, myLoclistener, Looper.getMainLooper());
+		TemporaryStorage.myInfo.locationData(false);
 		
 		isLogged = true;
-		
+		isMapActivated = false;
 		
 		communication.announceIAmOnline(TemporaryStorage.myInfo, TemporaryStorage.user_list);
 		
@@ -389,24 +352,18 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		if (!isLogged)
 			throw new UserNotLoggedInException();
 		
-		//TODO
-//		boolean success = false;
-//		
-//		success = 
+		deactivateMap();
 		communication.logout(TemporaryStorage.myInfo, TemporaryStorage.user_list);
 		
-//		if (!success)
-//			throw new CannotLogOutException();
-		//even if I cannot announce all that i logout... i must exit from program!
-		
 		isLogged = false;
-		lm.removeUpdates(myLoclistener);
+		
 		TemporaryStorage.myInfo.clearInfos();
 		TemporaryStorage.user_list.clear();
 		TemporaryStorage.messages.clear();
 		
 		handler.removeCallbacks(msgAckManager);
 		handler.removeCallbacks(userInfoRequestManager);
+		notifManager.cancelAll();
 	}
 	
 	@Override
@@ -437,9 +394,6 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		if ((user_to_chat = TemporaryStorage.getUserInfoByUsername(username_to_chat)) == null)
 			throw new UserToChatWithIsNotRecognizedException();
 		
-		if (MainActivity.DEBUG)
-			Log.d("IMService - sendMessage to", user_to_chat.toString());
-		
 		MessageInfo mi = new MessageInfo(TemporaryStorage.myInfo, user_to_chat, the_message);
 		
 		communication.sendMessage(mi);
@@ -451,10 +405,26 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		// add the message to storage and notify chat activity if needed
 		TemporaryStorage.addMessage(user_to_chat, mr);
 		notifyNewMessageToChatActivity(username_to_chat);
-		
-//		if (MainActivity.DEBUG)
-//			showNotificationIfNeeded(username_to_chat);
-		
+
+	}
+	
+	@Override
+	public boolean sendMessageToAll(String msg) {
+		boolean toRet = true;
+		for (UserInfo ui : TemporaryStorage.user_list) {
+			try {
+				sendMessage(ui.getUsername(), msg);
+			} catch (UserNotLoggedInException e) {
+				toRet = false;
+			} catch (UserToChatWithIsNotRecognizedException e) {
+				toRet = false;
+			} catch (CannotSendBecauseOfWrongUserInfo e) {
+				toRet = false;
+			} catch (InvalidDataException e) {
+				toRet = false;
+			}
+		}
+		return toRet;
 	}
 	
 	@Override
@@ -480,18 +450,45 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	public void setCurrentUserChat(String username_to_chat) {
 		currentUserChat = username_to_chat;
 		
+		notifManager.cancel(username_to_chat.hashCode());
 	}
-
+	
+	
 	@Override
-	public void viewingMap(boolean b) {
-		//TODO serve???
-//		viewingMap = b;		
-	}
-
-	@Override
-	public void sendMessageToAll(String msg) {
-		// TODO iniare un messaggio a tutti
+	public void activateMap(int my_rate, int others_rate) {
+		if (isMapActivated || !isLogged)
+			return;
+		isMapActivated = true;
+		my_location_refresh_rate = my_rate;
+		others_location_refresh_rate = others_rate;
 		
+		TemporaryStorage.myInfo.locationData(true);
+		if (lm != null)
+			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10, my_location_refresh_rate, myLoclistener, Looper.getMainLooper());	
+	}
+	
+	public void deactivateMap() {
+		if (!isMapActivated || !isLogged)
+			return;
+		
+		isMapActivated = false;
+		TemporaryStorage.myInfo.locationData(isMapActivated);
+		lm.removeUpdates(myLoclistener);
+	}
+
+	@Override
+	public boolean isMapActivated() {
+		return isMapActivated;
+	}
+
+	@Override
+	public int getMyRefreshTime() {
+		return my_location_refresh_rate;
+	}
+
+	@Override
+	public int getOthersRefreshTime() {
+		return others_location_refresh_rate;
 	}
 	
 	/*
@@ -505,19 +502,16 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	 * IAppManagerForComm
 	 * *************************************************************************
 	 */
+	@Override
 	public void setUserList(Vector<UserInfo> userList) {
 		for (UserInfo userInfo : userList) {
 			if (TemporaryStorage.user_list.contains(userInfo))
-				continue; //TODO AGGIORNARE I DATI
+				continue;
 			TemporaryStorage.user_list.add(userInfo);
 			userInfoReprs.add(new UserInfoRepr(userInfo, Calendar.getInstance().getTime()));
 		}
-		
 	}
 
-	/* TODO 
-	 * 
-	 */
 	@Override
 	public void recievedMessage(MessageInfo mi) {
 		String username_to_chat;
@@ -535,6 +529,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		username_to_chat = source.getUsername();
 		
 		MessageRepresentation mr = new MessageRepresentation(mi);
+		mr.ackRecieved = true;
 		
 		receivedUserInfoAnswer(source);
 		
@@ -547,20 +542,16 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		}
 		
 		communication.sendMessageAck(TemporaryStorage.myInfo, source, mi.hashCode());
-				
 	}
 
 	@Override
 	public void userLoggedOut(UserInfo source) {
 		if (!TemporaryStorage.user_list.contains(source))
 			return;
-		// non c'è l'utente che fa il logout;
 		
 		TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source)).setOffline();
 		
 		notifyUserStateChanged(source, UserInfo.OFFLINE_STATUS);
-		
-		//send messages
 	}
 
 	@Override
@@ -576,30 +567,13 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		
 	}
 	
-	private void notifyUserStateChanged(UserInfo u, String state) {
-		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_USERNAME_EXTRA, u.getUsername());
-		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA, state);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
-	}
-	
 	@Override
 	public void receivedMessageAnswer(UserInfo user, int messageHashAck) {
-//		Vector<MessageRepresentation> ms = TemporaryStorage.getMessagesByUser(user);
-//		
-//		if (ms == null)
-//			return;
-//		
-//		for(int i = TemporaryStorage.getMaxMessageCountHistoryPerUser() - 1; i >= 0; --i) {
-//			if (ms.elementAt(i).getMessageInfo().hashCode() == messageHashAck) {
-//				ms.elementAt(i).ackRecieved = true;
-//				return;
-//			}
-//		}
-		
 		for (MessageRepresentation mr : sentMessagesWaitingForAnswer) {
-			if (mr.getMessageInfo().hashCode() == messageHashAck) {
+			if (mr.getMessageInfo().getDestination().equals(user) && mr.getMessageInfo().hashCode() == messageHashAck) {
 				mr.ackRecieved = true;
 				notifyNewMessageToChatActivity(user.getUsername());
+				receivedUserInfoAnswer(user);
 				return;
 			}
 		}
@@ -613,9 +587,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	}
 
 	@Override
-	public void receivedUserInfoAnswer(UserInfo source) {
-		//aggiorno i dati di source e basta
-		
+	public void receivedUserInfoAnswer(UserInfo source) {		
 		UserInfoRepr uir = null;
 		try {
 			uir = userInfoReprs.get(userInfoReprs.indexOf(new UserInfoRepr(source, null)));
@@ -624,10 +596,12 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		}
 		
 		if (uir == null)
-			return; // non esiste... allora da mettere, si.. da mettere - basta che non sia il UserInfo.ServerName!
+			return;
 
 		
-		
+		boolean previous_state = uir.u.isOnline();
+
+		uir.u.locationData(source.hasLocationData());
 		uir.u.setAltitude(source.getAltitude());
 		uir.u.setLongitude(source.getLongitude());
 		uir.u.setLatitude(source.getLatitude());
@@ -635,13 +609,19 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		uir.u.setPort(source.getPort());
 		uir.u.setOnline();
 		
-		notifyUserStateChanged(uir.u, UserInfo.ONLINE_STATUS);
+		if (!previous_state)
+			notifyUserStateChanged(uir.u, UserInfo.ONLINE_STATUS);
 		
 		uir.last_update = Calendar.getInstance().getTime();
 		
 	}
-	
-	
+
+	@Override
+	public boolean isForCurrentUser(UserInfo destination) {
+		if (!isLogged)
+			return false;
+		return TemporaryStorage.myInfo.equals(destination);
+	}
 	
 	
 	/*

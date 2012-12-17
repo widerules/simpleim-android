@@ -123,7 +123,7 @@ public class MessageInfo {
 		result = prime * result + ((dst == null) ? 0 : dst.hashCode());
 		result = prime * result + ((message == null) ? 0 : message.hashCode());
 		result = prime * result
-				+ ((sentTime == null) ? 0 : sentTime.hashCode());
+				+ ((sentTime == null) ? 0 : getSentTimeString().hashCode());
 		result = prime * result + ((src == null) ? 0 : src.hashCode());
 		return result;
 	}
@@ -150,7 +150,7 @@ public class MessageInfo {
 		if (sentTime == null) {
 			if (other.sentTime != null)
 				return false;
-		} else if (!sentTime.equals(other.sentTime))
+		} else if (!getSentTimeString().equals(other.getSentTimeString()))
 			return false;
 		if (src == null) {
 			if (other.src != null)

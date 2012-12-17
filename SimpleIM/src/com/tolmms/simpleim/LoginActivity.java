@@ -36,11 +36,9 @@ import com.tolmms.simpleim.tools.Tools;
  * Activity which displays a login screen to the user
  */
 public class LoginActivity extends Activity {
-	// Values for email and password at the time of the login attempt.
 	private String username;
 	private String password;
 
-	// UI references.
 	private EditText et_username;
 	private EditText et_password;
 	private View view_login_form;
@@ -79,7 +77,6 @@ public class LoginActivity extends Activity {
 			if (MainActivity.DEBUG)
 				Log.d("LoginActivity", "chiamato onServiceConnected");
 			
-			// TODO bisogna mettere questo controllo in main activity forse
 			if (iMService.isUserLoggedIn()) {
 				startActivity(new Intent(LoginActivity.this, LoggedUser.class));
 				LoginActivity.this.finish();
@@ -150,7 +147,7 @@ public class LoginActivity extends Activity {
 	
 	
 	/**
-	 * Attempts to sign in or register the account specified by the login form.
+	 * Attempts to sign in the account specified by the login form.
 	 * If there are form errors (invalid email, missing fields, etc.), the
 	 * errors are presented and no actual login attempt is made.
 	 */
@@ -175,14 +172,6 @@ public class LoginActivity extends Activity {
 			focusView = et_username;
 			cancel = true;
 		} 
-		/*
-		 * questo controllo deve andare nel register activity
-		 * else if (!username.contains("@")) {
-			et_username.setError(getString(R.string.error_invalid_email));
-			focusView = et_username;
-			cancel = true;
-		}
-		*/
 		
 		// Check for password.
 		if (!cancel && TextUtils.isEmpty(password)) {
@@ -190,13 +179,6 @@ public class LoginActivity extends Activity {
 			focusView = et_password;
 			cancel = true;
 		} 
-		/*
-		 * questo controllo deve andare nel register activity
-		 * else if (password.length() < 4) {
-			et_password.setError(getString(R.string.it_error_invalid_password));
-			focusView = et_password;
-			cancel = true;
-		}*/
 
 		if (cancel) {
 			// There was an error; don't attempt login and focus the first
@@ -222,7 +204,7 @@ public class LoginActivity extends Activity {
 					
 					@Override
 					public void run() {
-						Looper.prepare(); //TODO mi da errore se lo cancello quando cerco di loggarmi la seconda volta (dopo essermi sloggato)
+						Looper.prepare(); /* it gives me an error if I delete it */
 						try {
 							iMService.loginUser(username, password);
 						} catch (UnknownHostException e) {
@@ -253,8 +235,6 @@ public class LoginActivity extends Activity {
 								@Override
 								public void run() {
 									Intent i = new Intent(LoginActivity.this, LoggedUser.class);
-//									guarda sul foglio del issue
-//									i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
 									startActivity(i);
 									LoginActivity.this.finish();
 								}

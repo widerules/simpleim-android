@@ -7,7 +7,8 @@
 
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        tools:ignore="UseCompoundDrawables" >
         
         <ImageView
         android:id="@+id/iv_user_status_chat"
@@ -54,6 +55,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1" 
+            android:maxLength="@string/MAX_MESSAGE_LEN"
             android:hint="@string/it_hint_send_message">
             <requestFocus></requestFocus>
         </EditText>

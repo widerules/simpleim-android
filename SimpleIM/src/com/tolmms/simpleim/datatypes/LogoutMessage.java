@@ -22,7 +22,6 @@ public class LogoutMessage {
 	public LogoutMessage(UserInfo user) {
 		this.user = user;
 		user.setOffline();
-		//TODO ridondante?
 	}
 	
 	public static LogoutMessage fromXML(String xml) throws XmlMessageReprException {
