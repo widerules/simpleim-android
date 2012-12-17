@@ -13,11 +13,17 @@
     <string name="title_activity_chat">Chat</string>
     <string name="it_send_message">Invia</string>
     <string name="it_hint_send_message">Inserisci qui il messaggio...</string>
-    <string name="it_error_cannot_chat_with_offline_user">Errore: non si può scrivere un messaggio ad un contatto non in linea</string>
+    <string name="it_error_cannot_chat_with_offline_user">Errore: non si può scrivere un messaggio ad un contatto non in linea.</string>
     <string name="it_error_cannot_send_empty_message">Non si può inviare un messaggio vuoto.</string>
     <string name="it_chat_self_name">io</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_map">Visualizzazione utenti sulla mappa</string>
     <string name="it_logout">Esci</string>
     
+    
+    
+    <string name="it_error_user_not_logged_in">Non sei loggato...</string>
+    <string name="it_error_user_to_chat_with_is_not_recognized">L\'utente a cui si cerca di scrivere non c\'è nella lista degli utenti.</string>
+	<string name="it_error_user_to_chat_with_has_incorect_contact_data">Non si hanno i dati corretti per poter inviare un messaggio al utente.</string>
+	<string name="it_error_empty_message_cannot_be_sent">Non si può inviare un messaggio vuoto.</string>
 </resources>
