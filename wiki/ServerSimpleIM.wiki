@@ -45,4 +45,5 @@ When a user logs in, of course, she gets the fresh copy of user list!
 Since all the communication is done using UDP protocol some packet could be lost - this packet could be a log out packet.
 If a user *A* logs out and the server does not receive the logout packet then the user list contains wrong data - that is for the server the user *A* is still logged in. And from now on, all users that login will get the wrong information about the user *A*.
 To remedy this problem the server sends each logged user every _SEC_ seconds a packet requesting an answer. If for some user, after requesting a number of times she's information, there's no answer - then she's maybe offline.
+
 Using this _polling_ the server keeps the users information up to date.
