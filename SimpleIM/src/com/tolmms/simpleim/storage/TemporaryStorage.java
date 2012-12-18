@@ -58,16 +58,18 @@ public class TemporaryStorage {
 	 * First come the online users and then the others (in alphabetical order!)
 	 */
 	public static void reorderUserList() {
-		Collections.sort(user_list, new Comparator<UserInfo>() {
-			@Override
-			public int compare(UserInfo lhs, UserInfo rhs) {
-				if (lhs.getStatus().compareTo(rhs.getStatus()) == 0)
-					return lhs.getUsername().compareTo(rhs.getUsername());
-				if (lhs.getStatus().equals(UserInfo.ONLINE_STATUS))
-					return -1;
-				return 1;
-			}
-		});
+		synchronized (user_list) {
+			Collections.sort(user_list, new Comparator<UserInfo>() {
+				@Override
+				public int compare(UserInfo lhs, UserInfo rhs) {
+					if (lhs.getStatus().compareTo(rhs.getStatus()) == 0)
+						return lhs.getUsername().compareTo(rhs.getUsername());
+					if (lhs.getStatus().equals(UserInfo.ONLINE_STATUS))
+						return -1;
+					return 1;
+				}
+			});
+		}
 	}
 
 	/**

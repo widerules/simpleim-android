@@ -1,7 +1,5 @@
 package com.tolmms.simpleim;
 
-import java.util.Vector;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -79,7 +77,7 @@ public class LoggedUser extends Activity {
 				Log.d("LoggedUser", "chiamato onServiceConnected");
 			
 			if (!iMService.isUserLoggedIn()) {
-				startActivity(new Intent(LoggedUser.this, MainActivity.class));
+//				startActivity(new Intent(LoggedUser.this, MainActivity.class));
 				LoggedUser.this.finish();
 			}
 		}
@@ -294,7 +292,7 @@ public class LoggedUser extends Activity {
 
 							@Override
 							public void run() {
-								startActivity(new Intent(LoggedUser.this, MainActivity.class));
+//								startActivity(new Intent(LoggedUser.this, MainActivity.class));
 								LoggedUser.this.finish();
 							}
 						});

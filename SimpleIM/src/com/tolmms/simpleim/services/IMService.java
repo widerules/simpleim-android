@@ -10,7 +10,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.app.TaskStackBuilder;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
@@ -120,7 +119,10 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		messageReceivedSent = new Intent(INTENT_ACTION_MESSAGES_RECEIVED_SENT);
 		userStateChange = new Intent(INTENT_ACTION_USER_STATE_CHANGED);
 		
-		TemporaryStorage.user_list.clear();
+		synchronized (TemporaryStorage.user_list) {
+			TemporaryStorage.user_list.clear();
+		}
+		
 		TemporaryStorage.messages.clear();
 		
 		lm = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -194,36 +196,36 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 			int seconds_to_check = SECONDS_TO_CHECK_USER_INFO;
 			if (isMapActivated)
 				seconds_to_check = Math.min(others_location_refresh_rate, SECONDS_TO_CHECK_USER_INFO);
-			
-			for (UserInfoRepr uir : userInfoReprs) {
-				// now - last >= Seconds to check
-				// now >= last + seconds to check
-				
-				if (!uir.u.isOnline())
-					continue;
-				
-				c.setTime(uir.last_update);
-				c.add(Calendar.SECOND, SECONDS_TO_CHECK_USER_INFO * NUMBER_USER_INFO_REQUEST_RETRIES);
-				if (now.after(c.getTime())) {
-					userLoggedOut(uir.u);
+			synchronized (userInfoReprs) {
+				for (UserInfoRepr uir : userInfoReprs) {
+					// now - last >= Seconds to check
+					// now >= last + seconds to check
 					
-					if (MainActivity.DEBUG)
-    					Log.d("IMService - userInfoRequestManager", "set a user offline...");
+					if (!uir.u.isOnline())
+						continue;
 					
-					continue;
-				}
-				c.setTime(uir.last_update);
-				c.add(Calendar.SECOND, seconds_to_check);
-				if (now.after(c.getTime())) {
-					communication.sendUserInfoRequest(TemporaryStorage.myInfo, uir.u);
+					c.setTime(uir.last_update);
+					c.add(Calendar.SECOND, SECONDS_TO_CHECK_USER_INFO * NUMBER_USER_INFO_REQUEST_RETRIES);
+					if (now.after(c.getTime())) {
+						userLoggedOut(uir.u);
+						
+						if (MainActivity.DEBUG)
+	    					Log.d("IMService - userInfoRequestManager", "set a user offline...");
+						
+						continue;
+					}
+					c.setTime(uir.last_update);
+					c.add(Calendar.SECOND, seconds_to_check);
+					if (now.after(c.getTime())) {
+						communication.sendUserInfoRequest(TemporaryStorage.myInfo, uir.u);
 
-					if (MainActivity.DEBUG)
-    					Log.d("IMService - userInfoRequestManager", "sent userinforequest...");
+						if (MainActivity.DEBUG)
+	    					Log.d("IMService - userInfoRequestManager", "sent userinforequest...");
+					}
+					
 				}
-				
 			}
-			
-			
+	
 			handler.postDelayed(this, seconds_to_check * 1000);
 		}
 	}
@@ -258,18 +260,20 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	private void showNotificationIfNeeded(String username_to_chat) {
 
 		Intent notifyOpensChatIntent = null;
-		TaskStackBuilder stackBuilder = null;
+//		TaskStackBuilder stackBuilder = null;
 		PendingIntent contentIntent = null;
 		NotificationCompat.Builder builder = null;
 		
 		notifyOpensChatIntent = new Intent(this, ChatActivity.class).
 								putExtra(ChatActivity.USERNAME_TO_CHAT_WITH_EXTRA, username_to_chat).
 								setAction(ChatActivity.MESSAGE_TO_A_USER);
-		stackBuilder = TaskStackBuilder.
-							create(this).
-							addParentStack(ChatActivity.class).
-							addNextIntent(notifyOpensChatIntent);
-		contentIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+		
+        contentIntent = PendingIntent.getActivity(getApplicationContext(), username_to_chat.hashCode(), notifyOpensChatIntent, PendingIntent.FLAG_ONE_SHOT);
+//		stackBuilder = TaskStackBuilder.
+//							create(this).
+//							addParentStack(ChatActivity.class).
+//							addNextIntent(notifyOpensChatIntent);
+//		contentIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_ONE_SHOT); // here the error
 		builder = new NotificationCompat.Builder(this).setContentIntent(contentIntent);
 		
 		
@@ -277,7 +281,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 				setContentTitle(getString(R.string.it_notification_new_message_title)).
 				setContentText(getString(R.string.it_notification_new_message_text) + " " + username_to_chat).
 				setSmallIcon(R.drawable.ic_stat_new_message).
-				setAutoCancel(true).
+//				setAutoCancel(true).
 				build();
 		
 
@@ -359,8 +363,12 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		isLogged = false;
 		
 		TemporaryStorage.myInfo.clearInfos();
-		TemporaryStorage.user_list.clear();
+		synchronized (TemporaryStorage.user_list) {
+			TemporaryStorage.user_list.clear();
+		}
 		TemporaryStorage.messages.clear();
+		
+		userInfoReprs.clear();
 		
 		handler.removeCallbacks(msgAckManager);
 		handler.removeCallbacks(userInfoRequestManager);
@@ -412,7 +420,10 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	@Override
 	public boolean sendMessageToAll(String msg) {
 		boolean toRet = true;
-		for (UserInfo ui : TemporaryStorage.user_list) {
+		
+		UserInfo[] uis = TemporaryStorage.user_list.toArray(new UserInfo[0]);
+		
+		for (UserInfo ui : uis) {
 			if (!ui.isOnline())
 				continue;
 			try {
@@ -452,7 +463,8 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	@Override
 	public void setCurrentUserChat(String username_to_chat) {
 		currentUserChat = username_to_chat;
-		
+		if (MainActivity.DEBUG)
+			Log.d("IMService - setCurrentUserChat", username_to_chat);
 		notifManager.cancel(username_to_chat.hashCode());
 	}
 	
@@ -507,14 +519,23 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	 */
 	@Override
 	public void setUserList(Vector<UserInfo> userList) {
-		for (UserInfo userInfo : userList) {
-			if (TemporaryStorage.user_list.contains(userInfo))
-				continue;
-			if (MainActivity.DEBUG)
-				Log.d("setUserList", userInfo.toString());
-			TemporaryStorage.user_list.add(userInfo);
-			userInfoReprs.add(new UserInfoRepr(userInfo, Calendar.getInstance().getTime()));
+		synchronized (TemporaryStorage.user_list) {
+			synchronized (userInfoReprs) {
+				for (UserInfo userInfo : userList) {
+					
+					if (TemporaryStorage.user_list.contains(userInfo)) {
+						if (MainActivity.DEBUG)
+							Log.d("setUserList", "NON DOVREI ESSERE QUI " + userInfo.toString());
+						continue;
+					}
+					if (MainActivity.DEBUG)
+						Log.d("setUserList", userInfo.toString());
+					TemporaryStorage.user_list.add(userInfo);
+					userInfoReprs.add(new UserInfoRepr(userInfo, Calendar.getInstance().getTime()));
+				}
+			}
 		}
+		TemporaryStorage.reorderUserList();
 	}
 
 	@Override
@@ -522,13 +543,26 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		String username_to_chat;
 		UserInfo source = mi.getSource();
 		
+		/* if the message source is me... then it is spoofed */
+		if (source.equals(TemporaryStorage.myInfo))
+			return;
+		
+		/* if the destination of the message is not me... then nothing to do */
+		if (!mi.getDestination().equals(TemporaryStorage.myInfo))
+			return;
+		
 		if (!TemporaryStorage.user_list.contains(source)) {
 			/*
 			 * this is the case when a user has registered, logged 
 			 * in and I did not received login message but he now writes to me.
 			 */
-			TemporaryStorage.user_list.add(source);
-			userInfoReprs.add(new UserInfoRepr(source, Calendar.getInstance().getTime()));
+			synchronized (TemporaryStorage.user_list) {
+				TemporaryStorage.user_list.add(source);
+			}
+			
+			synchronized (userInfoReprs) {
+				userInfoReprs.add(new UserInfoRepr(source, Calendar.getInstance().getTime()));
+			}
 		}
 		
 		username_to_chat = source.getUsername();
@@ -554,16 +588,19 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		if (!TemporaryStorage.user_list.contains(source))
 			return;
 		
-		UserInfo u = TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source));
-		u.locationData(source.hasLocationData());
-		if (source.hasLocationData()) {
-			u.setAltitude(source.getAltitude());
-			u.setLongitude(source.getLongitude());
-			u.setLatitude(source.getLatitude());
+		synchronized (TemporaryStorage.user_list) {
+			UserInfo u = TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source));
+			u.locationData(source.hasLocationData());
+			if (source.hasLocationData()) {
+				u.setAltitude(source.getAltitude());
+				u.setLongitude(source.getLongitude());
+				u.setLatitude(source.getLatitude());
+			}
+			u.setIP(source.getIp());
+			u.setPort(source.getPort());
+			u.setOffline();
 		}
-		u.setIP(source.getIp());
-		u.setPort(source.getPort());
-		u.setOffline();
+		
 		
 		
 		notifyUserStateChanged(source, UserInfo.OFFLINE_STATUS);
@@ -571,12 +608,19 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 
 	@Override
 	public void userLoggedIn(UserInfo source) {
+		if (source.equals(TemporaryStorage.myInfo))
+			return;
 		if (!TemporaryStorage.user_list.contains(source)) {
 			/*
 			 * this is the case when a user has registered after I logged in - so I don't know him.
 			 */
-			TemporaryStorage.user_list.add(source);
-			userInfoReprs.add(new UserInfoRepr(source, Calendar.getInstance().getTime()));
+			synchronized (TemporaryStorage.user_list) {
+				TemporaryStorage.user_list.add(source);
+			}
+			
+			synchronized (userInfoReprs) {
+				userInfoReprs.add(new UserInfoRepr(source, Calendar.getInstance().getTime()));
+			}
 		}
 		receivedUserInfoAnswer(source);
 		
@@ -584,6 +628,9 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	
 	@Override
 	public void receivedMessageAnswer(UserInfo user, int messageHashAck) {
+		if (user.equals(TemporaryStorage.myInfo))
+			return;
+		
 		for (MessageRepresentation mr : sentMessagesWaitingForAnswer) {
 			if (mr.getMessageInfo().getDestination().equals(user) && mr.getMessageInfo().hashCode() == messageHashAck) {
 				mr.ackRecieved = true;
@@ -597,6 +644,8 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 
 	@Override
 	public void receivedUserInfoRequest(UserInfo source) {
+		if (source.equals(TemporaryStorage.myInfo))
+			return;
 		receivedUserInfoAnswer(source);
 		communication.sendUserInfoAnswer(TemporaryStorage.myInfo, source);
 	}
@@ -632,21 +681,9 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		uir.last_update = Calendar.getInstance().getTime();
 		
 	}
-
-	@Override
-	public boolean isForCurrentUser(UserInfo destination) {
-		if (!isLogged)
-			return false;
-		return TemporaryStorage.myInfo.equals(destination);
-	}
-	
 	
 	/*
 	 * *************************************************************************
 	 * *************************************************************************
 	 */	
-	
-	
-	
-
 }

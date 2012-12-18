@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="app_name">SimpleIM</string>
     <string name="it_program_description">Questo è un semplice programma di messagistica instantanea.\n\nProgetto di MMS - UNIGE DIBRIS (2012).\n\nSupporta l\'invio dei messaggi a utenti online e la visualizzazione opzionale degli utenti online sulla mappa.</string>
@@ -13,6 +13,7 @@
     <string name="title_activity_chat">Chat</string>
     <string name="it_send_message">Invia</string>
     <string name="it_hint_send_message">Inserisci qui il messaggio&#8230;</string>
+    <string name="it_hint_send_message_to_all">Inserisci qui il messaggio&#8230;\n(il messaggio verrà inviato solo ai utenti online)</string>
     <string name="it_error_cannot_chat_with_offline_user">Errore: non si può scrivere un messaggio ad un contatto non in linea.</string>
     <string name="it_error_cannot_send_empty_message">Non si può inviare un messaggio vuoto.</string>
     <string name="it_chat_self_name">io</string>

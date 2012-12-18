@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical|top"
-        android:hint="@string/it_hint_send_message"
+        android:hint="@string/it_hint_send_message_to_all"
         android:maxLength="@string/MAX_MESSAGE_LEN"
         android:minLines="4" >
  
