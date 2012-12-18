@@ -83,6 +83,7 @@ public class BaseServer {
     	out.close();
     }
 
+	@SuppressWarnings("unused")
 	private void registerDebugUsers() {
   		try {
 			registeredUsers.add(new SimpleIMUser(
