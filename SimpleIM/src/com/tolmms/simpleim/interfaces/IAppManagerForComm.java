@@ -17,7 +17,5 @@ public interface IAppManagerForComm {
 	public void receivedUserInfoRequest(UserInfo source);
 	public void receivedUserInfoAnswer(UserInfo source);
 	
-	
-	public boolean isForCurrentUser(UserInfo destination);
 	public boolean isUserLoggedIn();
 }

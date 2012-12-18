@@ -242,7 +242,7 @@ public class RegisterActivity extends Activity {
 									setNeutralButton("Ok", new DialogInterface.OnClickListener() {
 										@Override
 										public void onClick(DialogInterface dialog, int which) {
-											startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+//											startActivity(new Intent(RegisterActivity.this, MainActivity.class));
 											RegisterActivity.this.finish();
 											dialog.cancel();
 										}

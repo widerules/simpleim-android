@@ -428,7 +428,7 @@ public class ChatActivity extends Activity {
 
 							@Override
 							public void run() {
-								startActivity(new Intent(ChatActivity.this, MainActivity.class));
+//								startActivity(new Intent(ChatActivity.this, MainActivity.class));
 								ChatActivity.this.finish();
 							}
 						});

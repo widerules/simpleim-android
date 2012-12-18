@@ -81,7 +81,7 @@ public class MapActivity extends Activity {
 				Log.d("MapActivity", "chiamato onServiceConnected");
 			
 			if (!iMService.isUserLoggedIn() || !iMService.isMapActivated()) {
-				startActivity(new Intent(MapActivity.this, MainActivity.class));
+//				startActivity(new Intent(MapActivity.this, MainActivity.class));
 				MapActivity.this.finish();
 			}
 			
@@ -254,7 +254,7 @@ public class MapActivity extends Activity {
 
 							@Override
 							public void run() {
-								startActivity(new Intent(MapActivity.this, MainActivity.class));
+//								startActivity(new Intent(MapActivity.this, MainActivity.class));
 								MapActivity.this.finish();
 							}
 						});

@@ -42,7 +42,9 @@ public class Communication implements ICommunication {
  * be aware that with loopback net interface it does not sends/recieves messages :(
  */
 //	String serverIpString = "10.0.2.2";
-	String serverIpString = "192.168.1.7";
+//	String serverIpString = "192.168.1.7";
+	String serverIpString = "192.168.0.184";
+	
 	private int serverUdpPort = 4445;
 	private int serverUDPTimeout = 5 * 1000; //miliseconds
 	
@@ -630,8 +632,6 @@ public class Communication implements ICommunication {
 					} catch (XmlMessageReprException e) { 
 						continue;
 					}
-					if (!service.isForCurrentUser(cm.getMessageInfo().getDestination()))
-						continue;
 					
 					service.recievedMessage(cm.getMessageInfo());
 				} else if (Procedures.isLogoutMessage(message_type)) {
