@@ -1,13 +1,28 @@
-#summary One-sentence summary of this page.
+#summary This page describes the client android app SimpleIM
 
 = Introduction =
 
-Add your content here.
+The client part of this Simple Instant Messaging program is Called SimpleIM. On this repository there is a project called SimpleIM - it can be imported into Eclipse IDE. Unfortunately there are no ant build files.
 
 
 = Details =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+As said almost everywhere - the communication is made by using UDP protocol. It is a state-less protocol. The greatest problem using this protocol (in this application) is to provide a mechanism to check if a message reached the destination or if it didn't then attempt to re-send the packet. The messages can be:
+  * log in messages;
+  * log out messages;
+  * communication messages - that is a text message that a user A sends to another user B.
+
+The communication is made by contacting *directly* the destination. [http://code.google.com/p/simpleim-android/wiki/ServerSimpleIM Here] I said that the [http://code.google.com/p/simpleim-android/wiki/ServerSimpleIM ServerSimpleIM] gives to every logged user the list of current registered users (with some additional information per each user - _contact information_, _status_, _localization coordinates_).
+
+So, to make a point, it is a kind of p2p application. Every message is sent directly to the destination user and not through the server.
+
+There's a "polling" to check whether some user logged out without sending a logout message (maybe due to communication error, etc.). In this way also each client has a fresh, up to date, view of the current users (whether they are offline or not and their localization coordinates).
+
+
+== Basic Functions Provided ==
+
+The android client application provides the following features (described at high level):
+  * possibility to register / login to the chat system (that is a server - [http://code.google.com/p/simpleim-android/wiki/ServerSimpleIM ServerSimpleIM]);
+  * possibility to view all the registered users - also to view their status (online or offline);
+  * possibility to view on the map the users that are online. A user can choose whether others can view him on the map - note if it chooses to not to show him on the others map then he won't be able to see others on his map!
+  * 
