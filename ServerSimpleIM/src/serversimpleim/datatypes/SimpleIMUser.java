@@ -54,5 +54,8 @@ public class SimpleIMUser {
 		return user;
 	}
 	
+	public String getPassword() {
+		return password;
+	}
 	
 }

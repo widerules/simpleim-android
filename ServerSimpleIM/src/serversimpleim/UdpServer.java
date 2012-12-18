@@ -77,7 +77,9 @@ public class UdpServer extends BaseServer {
         handleIncomingPackets.start();
         handleRequests.start();
         handleOutgoingPackets.start();
-        handleUserInfoUpdates.start();    
+        handleUserInfoUpdates.start();
+        
+        System.out.println("Server Started");
     }
     
     
@@ -218,7 +220,7 @@ public class UdpServer extends BaseServer {
 						simu.getUser().setOffline();
 						
 						if (DEBUG)
-							System.out.println("(HandlerUserInfoUpdates - set "+  simu.getUser() + " offline...");
+							System.out.println("HandlerUserInfoUpdates - set "+  simu.getUser() + " offline...");
 
 						continue;
 					}
@@ -438,7 +440,7 @@ public class UdpServer extends BaseServer {
         		System.out.println("Sending ACCEPT register to \"" + rm.getUser().getUsername() +"\"");
         	
     		rm.getUser().setOffline();
-    		registeredUsers.add(new SimpleIMUser(rm.getUser(), rm.getPassword()));
+    		addUserToRegisteredUsers(new SimpleIMUser(rm.getUser(), rm.getPassword()));
     		
     		try {
 				answer = new RegisterMessageAnswer(rm.getUser(),RegisterMessageAnswer.ACCEPTED).toXML();
