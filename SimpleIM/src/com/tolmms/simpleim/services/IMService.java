@@ -300,6 +300,7 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	}
 	
 	private void notifyUserStateChanged(UserInfo u, String state) {
+		TemporaryStorage.reorderUserList();
 		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_USERNAME_EXTRA, u.getUsername());
 		userStateChange.putExtra(INTENT_ACTION_USER_STATE_CHANGED_STATE_EXTRA, state);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(userStateChange);
@@ -412,6 +413,8 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	public boolean sendMessageToAll(String msg) {
 		boolean toRet = true;
 		for (UserInfo ui : TemporaryStorage.user_list) {
+			if (!ui.isOnline())
+				continue;
 			try {
 				sendMessage(ui.getUsername(), msg);
 			} catch (UserNotLoggedInException e) {
@@ -507,6 +510,8 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		for (UserInfo userInfo : userList) {
 			if (TemporaryStorage.user_list.contains(userInfo))
 				continue;
+			if (MainActivity.DEBUG)
+				Log.d("setUserList", userInfo.toString());
 			TemporaryStorage.user_list.add(userInfo);
 			userInfoReprs.add(new UserInfoRepr(userInfo, Calendar.getInstance().getTime()));
 		}
@@ -549,7 +554,17 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		if (!TemporaryStorage.user_list.contains(source))
 			return;
 		
-		TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source)).setOffline();
+		UserInfo u = TemporaryStorage.user_list.get(TemporaryStorage.user_list.indexOf(source));
+		u.locationData(source.hasLocationData());
+		if (source.hasLocationData()) {
+			u.setAltitude(source.getAltitude());
+			u.setLongitude(source.getLongitude());
+			u.setLatitude(source.getLatitude());
+		}
+		u.setIP(source.getIp());
+		u.setPort(source.getPort());
+		u.setOffline();
+		
 		
 		notifyUserStateChanged(source, UserInfo.OFFLINE_STATUS);
 	}
@@ -602,9 +617,11 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 		boolean previous_state = uir.u.isOnline();
 
 		uir.u.locationData(source.hasLocationData());
-		uir.u.setAltitude(source.getAltitude());
-		uir.u.setLongitude(source.getLongitude());
-		uir.u.setLatitude(source.getLatitude());
+		if (source.hasLocationData()) {
+			uir.u.setAltitude(source.getAltitude());
+			uir.u.setLongitude(source.getLongitude());
+			uir.u.setLatitude(source.getLatitude());
+		}
 		uir.u.setIP(source.getIp());
 		uir.u.setPort(source.getPort());
 		uir.u.setOnline();

@@ -176,7 +176,7 @@ public class MapActivity extends Activity {
 		runnable.run();
 		
 		mMapController.animateTo(new GeoPoint(TemporaryStorage.myInfo.getLatitude(), TemporaryStorage.myInfo.getLongitude(), TemporaryStorage.myInfo.getAltitude()));
-		
+		mMapController.setCenter(new GeoPoint(TemporaryStorage.myInfo.getLatitude(), TemporaryStorage.myInfo.getLongitude(), TemporaryStorage.myInfo.getAltitude()));
 	}
 	
 	@Override
@@ -205,6 +205,7 @@ public class MapActivity extends Activity {
 		
 		
 		mMapController.animateTo(new GeoPoint(TemporaryStorage.myInfo.getLatitude(), TemporaryStorage.myInfo.getLongitude(), TemporaryStorage.myInfo.getAltitude()));
+		mMapController.setCenter(new GeoPoint(TemporaryStorage.myInfo.getLatitude(), TemporaryStorage.myInfo.getLongitude(), TemporaryStorage.myInfo.getAltitude()));
 		runnable.run();
 		
 		super.onResume();
@@ -289,6 +290,8 @@ public class MapActivity extends Activity {
 		othersPositionOverlay.removeAllItems();
 		
 		for (UserInfo u : TemporaryStorage.user_list) {
+			if (MainActivity.DEBUG)
+				Log.d("mapactivity update others", u.toString());
 			if (!u.hasLocationData())
 				continue;
 			
@@ -298,8 +301,8 @@ public class MapActivity extends Activity {
 				temp.setMarker(getResources().getDrawable(R.drawable.ic_status_online));
 			} else {
 				temp.setMarker(getResources().getDrawable(R.drawable.ic_status_offline));
-			}
 			
+			}
 			othersPositionOverlay.addItem(temp);
 		}
 		
