@@ -81,7 +81,7 @@ public class UserInfo {
 	
 	@Override
 	public String toString() {
-		return "username: " + username + "; ip: " + ip + "; port: " + port + "; status: " + status;
+		return "username: " + username + "; ip: " + ip + "; port: " + port + "; status: " + status + "; hasLocation: " + locationData;
 	}
 
 
@@ -127,6 +127,10 @@ public class UserInfo {
 		this.ip = "";
 		this.port = UserInfo.MIN_ALLOWED_PORT;
 		setOffline();
+		this.locationData = false;
+		this.longitude = GENOVA_LONGITUDE;
+		this.latitude = GENOVA_LATITUDE;
+		this.altitude = 0;
 	}
 
 	public String getIp() {

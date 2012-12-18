@@ -44,7 +44,7 @@ import com.tolmms.simpleim.storage.TemporaryStorage;
 import com.tolmms.simpleim.tools.Tools;
 
 public class LoggedUser extends Activity {
-	Vector<UserInfo> user_list;
+//	Vector<UserInfo> user_list;
 	EfficientAdapter myadapt;
 	
 	
@@ -86,6 +86,8 @@ public class LoggedUser extends Activity {
 		
 	};
 	
+	/**********************************/
+	
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
@@ -120,7 +122,10 @@ public class LoggedUser extends Activity {
 		super.onResume();
 	}
 	
-	/**********************************/
+	@Override
+	public void onBackPressed() {
+		return;
+    }
 	
 	
 	@Override
@@ -128,7 +133,7 @@ public class LoggedUser extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_logged_user);
 		
-		user_list = TemporaryStorage.user_list;
+//		user_list = TemporaryStorage.user_list;
 		
 		ListView l1 = (ListView) findViewById(R.id.ListView01);
 		myadapt = new EfficientAdapter(this);
@@ -382,11 +387,13 @@ public class LoggedUser extends Activity {
 		}
 
 		public int getCount() {
-			return user_list.size();
+//			return user_list.size();
+			return TemporaryStorage.user_list.size();
 		}
 
 		public Object getItem(int position) {
-			return user_list.get(position);
+//			return user_list.get(position);
+			return TemporaryStorage.user_list.get(position);
 		}
 
 		public long getItemId(int position) {
@@ -394,7 +401,8 @@ public class LoggedUser extends Activity {
 		}
 		
 		public boolean isEnabled(int position) {
-			return user_list.get(position).isOnline();
+//			return user_list.get(position).isOnline();
+			return TemporaryStorage.user_list.get(position).isOnline();
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
@@ -410,7 +418,7 @@ public class LoggedUser extends Activity {
 				holder = (ViewHolder) convertView.getTag();
 			}
 			
-			UserInfo currentUser = user_list.get(position);
+			UserInfo currentUser = TemporaryStorage.user_list.get(position);
 			if (currentUser.isOnline()) {
 				holder.iv_status_user.setImageResource(R.drawable.ic_status_online);
 				holder.iv_chat_icon.setImageResource(R.drawable.ic_chat);
