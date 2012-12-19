@@ -5,6 +5,7 @@
 
 The client part of this Simple Instant Messaging program is Called SimpleIM. On this repository there is a project called SimpleIM - it can be imported into Eclipse IDE. Unfortunately there are no ant build files.
 
+To turn down the debug messages you can set the *`DEBUG`* variable in _com.tolmms.simpleim.MainActivity.java_.
 
 = Details =
 
