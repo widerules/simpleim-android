@@ -6,6 +6,7 @@
 The server part of this Simple Instant Messaging program is Called ServerSimpleIM.
 On this repository there is a project called ServerSimpleIM - it can be imported into Eclipse IDE. Unfortunately there are no ant build files.
 
+To turn down the debug messages you can set the *`DEBUG`* variable in _serversimpleim.BaseServer.java_.
 
 = Details =
 
