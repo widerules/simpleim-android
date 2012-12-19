@@ -117,6 +117,8 @@ public class LoggedUser extends Activity {
 		
 		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
 		
+		myadapt.notifyDataSetChanged();
+		
 		super.onResume();
 	}
 	
@@ -131,12 +133,13 @@ public class LoggedUser extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_logged_user);
 		
-//		user_list = TemporaryStorage.user_list;
+		setTitle(getTitle() + " ("+ TemporaryStorage.myInfo.getUsername() + ")");
 		
 		ListView l1 = (ListView) findViewById(R.id.ListView01);
 		myadapt = new EfficientAdapter(this);
 		l1.setAdapter(myadapt);
 		
+		l1.setSelected(false);
 		
 		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(IAppManager.INTENT_ACTION_USER_STATE_CHANGED));
 		
@@ -338,11 +341,11 @@ public class LoggedUser extends Activity {
 			et_my_time.setFilters(new InputFilter[] { filter });
 			et_other_time.setFilters(new InputFilter[] { filter });
 			
-			if (iMService.isMapActivated())
-				sw_map.setChecked(true);
-			else
-				sw_map.setChecked(false);
+			sw_map.setChecked(iMService.isMapActivated());
+			et_my_time.setText(String.valueOf(iMService.getMyRefreshTime()));
+			et_other_time.setText(String.valueOf(iMService.getOthersRefreshTime()));
 			
+				
 			// set dialog message
 			alertDialogBuilder.setCancelable(false).setTitle(getString(R.string.it_location_settings))
 				.setPositiveButton(getString(R.string.it_btn_ok), new DialogInterface.OnClickListener() {
