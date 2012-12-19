@@ -519,21 +519,15 @@ public class IMService extends Service implements IAppManager, IAppManagerForCom
 	 */
 	@Override
 	public void setUserList(Vector<UserInfo> userList) {
-		synchronized (TemporaryStorage.user_list) {
-			synchronized (userInfoReprs) {
-				for (UserInfo userInfo : userList) {
-					
-					if (TemporaryStorage.user_list.contains(userInfo)) {
-						if (MainActivity.DEBUG)
-							Log.d("setUserList", "NON DOVREI ESSERE QUI " + userInfo.toString());
-						continue;
-					}
-					if (MainActivity.DEBUG)
-						Log.d("setUserList", userInfo.toString());
-					TemporaryStorage.user_list.add(userInfo);
-					userInfoReprs.add(new UserInfoRepr(userInfo, Calendar.getInstance().getTime()));
-				}
+		for (UserInfo userInfo : userList) {
+			
+			if (TemporaryStorage.user_list.contains(userInfo)) {
+				if (MainActivity.DEBUG)
+					Log.d("setUserList", "NON DOVREI ESSERE QUI " + userInfo.toString());
+				continue;
 			}
+			TemporaryStorage.user_list.add(userInfo);
+			userInfoReprs.add(new UserInfoRepr(userInfo, Calendar.getInstance().getTime()));
 		}
 		TemporaryStorage.reorderUserList();
 	}

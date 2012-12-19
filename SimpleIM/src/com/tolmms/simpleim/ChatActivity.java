@@ -210,6 +210,8 @@ public class ChatActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
+		setTitle(getTitle() + " ("+ TemporaryStorage.myInfo.getUsername() + ")");
+		
 		Intent myIntent = getIntent();
 		
 		if (!myIntent.getAction().equals(MESSAGE_TO_A_USER))

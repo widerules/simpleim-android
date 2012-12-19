@@ -131,6 +131,8 @@ public class MapActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_map);
+		
+		setTitle(getTitle() + " ("+ TemporaryStorage.myInfo.getUsername() + ")");
 
 		mMapView = (MapView) findViewById(R.id.mapview);
 		mMapView.setTileSource(TileSourceFactory.MAPNIK);
