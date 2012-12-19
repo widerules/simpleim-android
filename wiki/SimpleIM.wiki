@@ -25,7 +25,7 @@ There's a "polling" to check whether some user logged out without sending a logo
 The android client application provides the following features (described at high level):
   * possibility to register / login to the chat system (that is a server - [http://code.google.com/p/simpleim-android/wiki/ServerSimpleIM ServerSimpleIM]);
   * possibility to view all the registered users - also to view their status (online or offline);
-  * possibility to view on the map the users that are on line. A user can choose whether others can view him on the map - note if it chooses to not to show him on the others map then he won't be able to see others on his map!
+  * possibility to view on the map the users that are on line. A user can choose whether others can view him on the map - note if it chooses to not to show him on the others map then he won't be able to see others on his map! _I used OSMDroid api to get map data from OpenStreetMap_.
   * possibility to send text messages to a on line user;
   * possibility to send a message to all the on line users of the system;
 
